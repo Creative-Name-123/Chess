@@ -1,6 +1,5 @@
 import pygame
 import sys
-import os
 import io
 import requests
 
@@ -9,9 +8,9 @@ pygame.init()
 
 # Screen dimensions
 SCREEN_WIDTH = 800
-SCREEN_HEIGHT = 800
+SCREEN_HEIGHT = 600
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("Real Chess Game with Turns")
+pygame.display.set_caption("Chess")
 
 # Colors
 WHITE = (255, 255, 255)
@@ -19,15 +18,14 @@ BLACK = (0, 0, 0)
 BROWN_LIGHT = (222, 184, 135)
 BROWN_DARK = (139, 69, 19)
 GREEN_HIGHLIGHT = (0, 255, 0, 80) # For highlighting possible moves
+DARK_HIGHLIGHT = (0, 50, 0, 200)
 RED_HIGHLIGHT = (255, 0, 0, 80)   # For highlighting check (optional for now)
 
 # Board size and square size
 BOARD_SIZE = 8
-SQUARE_SIZE = SCREEN_WIDTH // BOARD_SIZE
+SQUARE_SIZE = SCREEN_WIDTH // BOARD_SIZE // 2
 
 # Piece representation
-# Using a class for pieces could be more organized in a larger project,
-# but we'll stick with strings for now for simplicity.
 # 'w' for white, 'b' for black, followed by piece type (R, N, B, Q, K, P)
 initial_board = [
     ['bR', 'bN', 'bB', 'bQ', 'bK', 'bB', 'bN', 'bR'],
@@ -37,27 +35,36 @@ initial_board = [
     [None, None, None, None, None, None, None, None],
     [None, None, None, None, None, None, None, None],
     ['wP', 'wP', 'wP', 'wP', 'wP', 'wP', 'wP', 'wP'],
-    ['wR', 'wN', 'wB', 'wQ', 'wK', 'wB', 'wN', 'wR']
-]
+    ['wR', 'wN', 'wB', 'wQ', 'wK', 'wB', 'wN', 'wR']]
+
+moves = []
 
 # Create a deep copy of the initial board to start the game
 board = [row[:] for row in initial_board]
 
-# --- Load Piece Images from URLs (Conceptual Outline - NOT directly runnable as is by me) ---
+# Load Piece Images from URLs
 piece_images = {}
-# Example URLs (replace with actual URLs for your piece images)
 piece_image_urls = {
     'bR': 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/ff/Chess_rdt45.svg/45px-Chess_rdt45.svg.png',
-    'bN': 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ef/Chess_ndt45.svg/45px-Chess_ndt45.svg.png',
-    'bB': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/98/Chess_bdt45.svg/45px-Chess_bdt45.svg.png'
-    # ... add URLs for all piece images
-}
+    'bN': 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ef/Chess_ndt45.svg/68px-Chess_ndt45.svg.png',
+    'bB': 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/98/Chess_bdt45.svg/45px-Chess_bdt45.svg.png',
+    'bQ': 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/Chess_qdt45.svg/68px-Chess_qdt45.svg.png',
+    'bK': 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Chess_kdt45.svg/68px-Chess_kdt45.svg.png',
+    'bP': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Chess_pdt45.svg/68px-Chess_pdt45.svg.png',
+    'wR': 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/72/Chess_rlt45.svg/68px-Chess_rlt45.svg.png',
+    'wN': 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/70/Chess_nlt45.svg/68px-Chess_nlt45.svg.png',
+    'wB': 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b1/Chess_blt45.svg/68px-Chess_blt45.svg.png',
+    'wQ': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Chess_qlt45.svg/68px-Chess_qlt45.svg.png',
+    'wK': 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/42/Chess_klt45.svg/68px-Chess_klt45.svg.png',
+    'wP': 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Chess_plt45.svg/68px-Chess_plt45.svg.png'}
 
 # Load and scale images from URLs
+headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
+
 for piece, url in piece_image_urls.items():
     try:
-        response = requests.get(url)
-        response.raise_for_status() # Raise an exception for bad status codes (4xx or 5xx)
+        response = requests.get(url, headers=headers)
+        response.raise_for_status()  # Raise an exception for bad status codes (4xx or 5xx)
 
         # Use io.BytesIO to treat the downloaded data as a file
         image_file = io.BytesIO(response.content)
@@ -71,7 +78,6 @@ for piece, url in piece_image_urls.items():
     except pygame.error as e:
         print(f"Error loading image from URL {url}: {e}")
         # Handle Pygame loading errors
-
 
 # --- Game State Variables ---
 current_turn = 'white'
@@ -149,10 +155,7 @@ def get_rook_moves(board, row, col, color):
 
 def get_knight_moves(board, row, col, color):
     moves = []
-    knight_moves = [
-        (-2, -1), (-2, 1), (-1, -2), (-1, 2),
-        (1, -2), (1, 2), (2, -1), (2, 1)
-    ]
+    knight_moves = [(-2, -1), (-2, 1), (-1, -2), (-1, 2), (1, -2), (1, 2), (2, -1), (2, 1)]
 
     for dr, dc in knight_moves:
         r, c = row + dr, col + dc
@@ -184,11 +187,7 @@ def get_queen_moves(board, row, col, color):
 
 def get_king_moves(board, row, col, color):
     moves = []
-    king_moves = [
-        (-1, -1), (-1, 0), (-1, 1),
-        (0, -1),           (0, 1),
-        (1, -1),  (1, 0),  (1, 1)
-    ]
+    king_moves = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
 
     for dr, dc in king_moves:
         r, c = row + dr, col + dc
@@ -251,6 +250,8 @@ def make_move(board, start_row, start_col, end_row, end_col):
     Updates the board state after a valid move.
     """
     piece_to_move = board[start_row][start_col]
+    moves.append(piece_to_move + ": " + str(start_col) + ", " + str(start_row) + " to " + str(end_col) + ", " + str(end_row))
+    print(moves[-1])
     board[end_row][end_col] = piece_to_move
     board[start_row][start_col] = None
     # TODO: Handle special moves like castling, en passant, and pawn promotion
@@ -265,14 +266,14 @@ def draw_board():
     for row in range(BOARD_SIZE):
         for col in range(BOARD_SIZE):
             color = BROWN_LIGHT if (row + col) % 2 == 0 else BROWN_DARK
-            pygame.draw.rect(screen, color, (col * SQUARE_SIZE, row * SQUARE_SIZE, SQUARE_SIZE, SQUARE_SIZE))
+            pygame.draw.rect(screen, color, (col * SQUARE_SIZE, row * SQUARE_SIZE + 100, SQUARE_SIZE, SQUARE_SIZE))
 
 def draw_pieces(board, piece_images):
     for row in range(BOARD_SIZE):
         for col in range(BOARD_SIZE):
             piece = board[row][col]
             if piece and piece in piece_images:
-                screen.blit(piece_images[piece], (col * SQUARE_SIZE, row * SQUARE_SIZE))
+                screen.blit(piece_images[piece], (col * SQUARE_SIZE, row * SQUARE_SIZE + 100))
             elif piece:
                  # Fallback if image not loaded
                  font = pygame.font.Font(None, 36)
@@ -284,8 +285,11 @@ def draw_possible_moves(moves):
     for row, col in moves:
         # Draw a semi-transparent green square over possible move destinations
         s = pygame.Surface((SQUARE_SIZE, SQUARE_SIZE), pygame.SRCALPHA)
-        s.fill(GREEN_HIGHLIGHT)
-        screen.blit(s, (col * SQUARE_SIZE, row * SQUARE_SIZE))
+        if is_empty(board, row, col):
+            s.fill(GREEN_HIGHLIGHT)
+        else:
+            s.fill(DARK_HIGHLIGHT)
+        screen.blit(s, (col * SQUARE_SIZE, row * SQUARE_SIZE + 100))
 
 def draw_selected_piece(selected_piece_pos):
     if selected_piece_pos:
@@ -301,39 +305,43 @@ while running:
             running = False
         elif event.type == pygame.MOUSEBUTTONDOWN:
             mouse_x, mouse_y = event.pos
-            clicked_row = mouse_y // SQUARE_SIZE
-            clicked_col = mouse_x // SQUARE_SIZE
+            if 0 < mouse_x < SCREEN_WIDTH // 2 and SCREEN_HEIGHT // 2 - 200 < mouse_y < SCREEN_HEIGHT // 2 + 200:
+                clicked_row = (200 + mouse_y) // 2 // SQUARE_SIZE  # TODO: Fix this
+                clicked_col = mouse_x // SQUARE_SIZE
 
-            if selected_piece_pos is None:
-                # No piece selected, try to select one
-                piece_at_click = board[clicked_row][clicked_col]
-                if piece_at_click and get_piece_color(piece_at_click) == current_turn:
-                    selected_piece_pos = (clicked_row, clicked_col)
-                    possible_moves = get_all_possible_moves(board, clicked_row, clicked_col)
-            else:
-                # A piece is selected, try to make a move
-                start_row, start_col = selected_piece_pos
-                end_row, end_col = clicked_row, clicked_col
-
-                if (end_row, end_col) == selected_piece_pos:
-                    # Clicked on the same piece again, deselect
-                    selected_piece_pos = None
-                    possible_moves = []
-                elif is_valid_move(board, start_row, start_col, end_row, end_col):
-                    # Valid move, make it and switch turns
-                    make_move(board, start_row, start_col, end_row, end_col)
-                    switch_turn()
-                    # Reset selection after the move
-                    selected_piece_pos = None
-                    possible_moves = []
+                if selected_piece_pos is None:
+                    # No piece selected, try to select one
+                    piece_at_click = board[clicked_row][clicked_col]
+                    if piece_at_click and get_piece_color(piece_at_click) == current_turn:
+                        selected_piece_pos = (clicked_row, clicked_col)
+                        possible_moves = get_all_possible_moves(board, clicked_row, clicked_col)
                 else:
-                    # Invalid move, deselect the piece
-                    selected_piece_pos = None
-                    possible_moves = []
+                    # A piece is selected, try to make a move
+                    start_row, start_col = selected_piece_pos
+                    end_row, end_col = clicked_row, clicked_col
+
+                    if (end_row, end_col) == selected_piece_pos:
+                        # Clicked on the same piece again, deselect
+                        selected_piece_pos = None
+                        possible_moves = []
+                    elif is_valid_move(board, start_row, start_col, end_row, end_col):
+                        # Valid move, make it and switch turns
+                        make_move(board, start_row, start_col, end_row, end_col)
+                        switch_turn()
+                        # Reset selection after the move
+                        selected_piece_pos = None
+                        possible_moves = []
+                    else:
+                        # Invalid move, deselect the piece
+                        selected_piece_pos = None
+                        possible_moves = []
+            else:
+                # Buttons outside the board
+                draw_board()
 
 
     # Drawing
-    screen.fill(BLACK)  # Or another background color
+    screen.fill(DARK_HIGHLIGHT)
     draw_board()
     draw_pieces(board, piece_images)
     draw_possible_moves(possible_moves)
