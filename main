@@ -10,14 +10,17 @@ pygame.init()
 SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 600
 screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
-pygame.display.set_caption("Chess")
+pygame.display.set_caption("Chess Menu")
+
+# Menu Options
+menu_options = ["Player vs. Player (offline)", "Player vs. Player (online)", "Options", "Quit"]
 
 # Colors
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
 BROWN_LIGHT = (222, 184, 135)
 BROWN_DARK = (139, 69, 19)
-GREEN_HIGHLIGHT = (0, 255, 0, 80) # For highlighting possible moves
+GREEN_HIGHLIGHT = (0, 255, 0, 80)  # For highlighting possible moves
 DARK_HIGHLIGHT = (0, 50, 0, 200)
 RED_HIGHLIGHT = (255, 0, 0, 80)   # For highlighting check (optional for now)
 
@@ -84,23 +87,27 @@ current_turn = 'white'
 selected_piece_pos = None  # (row, col) of the selected piece
 possible_moves = []    # List of (row, col) for possible moves
 
+
 # --- Helper Functions ---
 
 def get_piece_color(piece):
-    """Returns the color ('white' or 'black') of a piece."""
+    # Returns the color ('white' or 'black') of a piece name
     if piece and piece[0] == 'w':
         return 'white'
     elif piece and piece[0] == 'b':
         return 'black'
     return None
 
+
 def is_on_board(row, col):
     """Checks if a square is within the board boundaries."""
     return 0 <= row < BOARD_SIZE and 0 <= col < BOARD_SIZE
 
+
 def is_empty(board, row, col):
     """Checks if a square is empty."""
     return board[row][col] is None
+
 
 def is_opponent(board, row, col, current_color):
     """Checks if the piece at (row, col) is an opponent's piece."""
@@ -110,12 +117,14 @@ def is_opponent(board, row, col, current_color):
         return piece_color is not None and piece_color != current_color
     return False
 
+
 def has_moved(piece_code, start_col=None):
     for move in moves:
         if move.startswith(piece_code):
             if start_col is None or f": {start_col}," in move:
                 return True
     return False
+
 
 def get_pawn_attacks(board, row, col, color):
     direction = -1 if color == 'w' else 1
@@ -125,6 +134,7 @@ def get_pawn_attacks(board, row, col, color):
         if is_on_board(r, c):
             attacks.append((r, c))
     return attacks
+
 
 def is_square_attacked(board, row, col, by_color):
     enemy = by_color
@@ -170,21 +180,20 @@ def is_square_attacked(board, row, col, by_color):
 
     return False
 
+
 # --- Movement Logic for Each Piece Type (Core of the Game) ---
 
 def get_pawn_moves(board, row, col, color):
     moves = []
-    direction = -1 if color == 'white' else 1 # -1 for white (up), 1 for black (down)
-    start_row = 6 if color == 'white' else 1
 
     # One step forward
-    one_step_row = row + direction
+    one_step_row = row - 1
     if is_on_board(one_step_row, col) and is_empty(board, one_step_row, col):
         moves.append((one_step_row, col))
 
         # Two steps forward from starting position
-        two_step_row = row + 2 * direction
-        if row == start_row and is_on_board(two_step_row, col) and is_empty(board, two_step_row, col) and is_empty(board, one_step_row, col):
+        two_step_row = row - 2
+        if row == 6 and is_on_board(two_step_row, col) and is_empty(board, two_step_row, col) and is_empty(board, one_step_row, col):
             moves.append((two_step_row, col))
 
     # Captures
@@ -196,9 +205,10 @@ def get_pawn_moves(board, row, col, color):
     # TODO: Implement En Passant
     return moves
 
+
 def get_rook_moves(board, row, col, color):
     moves = []
-    directions = [(0, 1), (0, -1), (1, 0), (-1, 0)] # Right, Left, Down, Up
+    directions = [(0, 1), (0, -1), (1, 0), (-1, 0)]  # Right, Left, Down, Up
 
     for dr, dc in directions:
         r, c = row + dr, col + dc
@@ -206,12 +216,13 @@ def get_rook_moves(board, row, col, color):
             if is_empty(board, r, c):
                 moves.append((r, c))
             elif is_opponent(board, r, c, color):
-                moves.append((r, c)) # Can capture the opponent
-                break # Stop after capturing
-            else: # Own piece
+                moves.append((r, c))  # Can capture the opponent
+                break  # Stop after capturing
+            else:  # Own piece
                 break
             r, c = r + dr, c + dc
     return moves
+
 
 def get_knight_moves(board, row, col, color):
     moves = []
@@ -224,9 +235,10 @@ def get_knight_moves(board, row, col, color):
                 moves.append((r, c))
     return moves
 
+
 def get_bishop_moves(board, row, col, color):
     moves = []
-    directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)] # Diagonals
+    directions = [(-1, -1), (-1, 1), (1, -1), (1, 1)]  # Diagonals
 
     for dr, dc in directions:
         r, c = row + dr, col + dc
@@ -234,16 +246,18 @@ def get_bishop_moves(board, row, col, color):
             if is_empty(board, r, c):
                 moves.append((r, c))
             elif is_opponent(board, r, c, color):
-                moves.append((r, c)) # Can capture the opponent
-                break # Stop after capturing
-            else: # Own piece
+                moves.append((r, c))  # Can capture the opponent
+                break  # Stop after capturing
+            else:  # Own piece
                 break
             r, c = r + dr, c + dc
     return moves
 
+
 def get_queen_moves(board, row, col, color):
     # Queen moves are a combination of Rook and Bishop moves
     return get_rook_moves(board, row, col, color) + get_bishop_moves(board, row, col, color)
+
 
 def get_king_moves(board, row, col, color):
     moves_list = []
@@ -273,7 +287,6 @@ def get_king_moves(board, row, col, color):
             moves_list.append((0, 2))  # King to c8
 
     return moves_list
-
 
 
 # --- Main Move Calculation Function ---
@@ -307,6 +320,7 @@ def get_all_possible_moves(board, row, col):
     # TODO: Filter moves to ensure they don't leave the king in check
     return moves
 
+
 # --- Game Logic Functions ---
 
 def is_valid_move(board, start_row, start_col, end_row, end_col):
@@ -322,64 +336,119 @@ def is_valid_move(board, start_row, start_col, end_row, end_col):
         return True
     return False
 
-def make_move(board, start_row, start_col, end_row, end_col):
-    piece_to_move = board[start_row][start_col]
-    move_record = f"{piece_to_move}: {start_col}, {start_row} to {end_col}, {end_row}"
-    moves.append(move_record)
-    print(move_record)
 
-    # Castling move detection and rook move
-    if piece_to_move[1] == 'K':
-        if piece_to_move == 'wK':
-            if (start_row, start_col, end_row, end_col) == (7, 4, 7, 6):  # White kingside
-                board[7][5] = board[7][7]
-                board[7][7] = None
-            elif (start_row, start_col, end_row, end_col) == (7, 4, 7, 2):  # White queenside
-                board[7][3] = board[7][0]
-                board[7][0] = None
-        elif piece_to_move == 'bK':
-            if (start_row, start_col, end_row, end_col) == (0, 4, 0, 6):  # Black kingside
-                board[0][5] = board[0][7]
-                board[0][7] = None
-            elif (start_row, start_col, end_row, end_col) == (0, 4, 0, 2):  # Black queenside
-                board[0][3] = board[0][0]
-                board[0][0] = None
-    elif piece_to_move[1] == 'P':
-        if end_row == 7 and current_turn == "black":
-            board[7][end_col] = 'bQ'
-            board[6][start_col] = None
-        elif end_row == 0 and current_turn == "white":
-            board[0][end_col] = 'wQ'
-            board[1][start_col] = None
-    board[end_row][end_col] = piece_to_move
-    board[start_row][start_col] = None
-    # TODO: Handle en passant and pawn promotion
+def make_move(board, start_row, start_col, end_row, end_col, up):
+    if up:
+        piece_to_move = board[start_row][start_col]
+        move_record = f"{piece_to_move}: {start_col}, {start_row} to {end_col}, {end_row}"
+        moves.append(move_record)
+        print(move_record)
+
+        # Castling move detection and rook move
+        if piece_to_move[1] == 'K':
+            if piece_to_move == 'wK':
+                if (start_row, start_col, end_row, end_col) == (7, 4, 7, 6):  # White king side
+                    board[7][5] = board[7][7]
+                    board[7][7] = None
+                elif (start_row, start_col, end_row, end_col) == (7, 4, 7, 2):  # White queen side
+                    board[7][3] = board[7][0]
+                    board[7][0] = None
+            elif piece_to_move == 'bK':
+                if (start_row, start_col, end_row, end_col) == (0, 4, 0, 6):  # Black king side
+                    board[0][5] = board[0][7]
+                    board[0][7] = None
+                elif (start_row, start_col, end_row, end_col) == (0, 4, 0, 2):  # Black queen side
+                    board[0][3] = board[0][0]
+                    board[0][0] = None
+        elif piece_to_move[1] == 'P':
+            if end_row == 7 and current_turn == "black":
+                board[7][end_col] = 'bQ'
+                board[6][start_col] = None
+            elif end_row == 0 and current_turn == "white":
+                board[0][end_col] = 'wQ'
+                board[1][start_col] = None
+        board[end_row][end_col] = piece_to_move
+        board[start_row][start_col] = None
+        # TODO: Handle en passant and pawn promotion
+    else:
+        piece_to_move = board[7 - start_row][7 - start_col]
+        move_record = f"{piece_to_move}: {start_col}, {start_row} to {end_col}, {end_row}"
+        moves.append(move_record)
+        print(move_record)
+
+        # Castling move detection and rook move
+        if piece_to_move[1] == 'K':
+            if piece_to_move == 'wK':
+                if (7 - start_row, 7 - start_col, 7 - end_row, 7 - end_col) == (7, 4, 7, 6):  # White king side
+                    board[7][5] = board[7][7]
+                    board[7][7] = None
+                elif (7 - start_row, 7 - start_col, 7 - end_row, 7 - end_col) == (7, 4, 7, 2):  # White queen side
+                    board[7][3] = board[7][0]
+                    board[7][0] = None
+            elif piece_to_move == 'bK':
+                if (7 - start_row, 7 - start_col, 7 - end_row, 7 - end_col) == (0, 4, 0, 6):  # Black king side
+                    board[0][5] = board[0][7]
+                    board[0][7] = None
+                elif (7 - start_row, 7 - start_col, 7 - end_row, 7 - end_col) == (0, 4, 0, 2):  # Black queen side
+                    board[0][3] = board[0][0]
+                    board[0][0] = None
+        elif piece_to_move[1] == 'P':
+            if end_row == 7 and current_turn == "black":
+                board[7][7 - end_col] = 'bQ'
+                board[6][7 - start_col] = None
+            elif end_row == 0 and current_turn == "white":
+                board[0][7 - end_col] = 'wQ'
+                board[1][7 - start_col] = None
+        board[7 - end_row][7 - end_col] = piece_to_move
+        board[7 - start_row][7 - start_col] = None
 
 
 def switch_turn():
     global current_turn
     current_turn = 'black' if current_turn == 'white' else 'white'
 
+
 # --- Drawing Functions ---
 
-def draw_board():
-    for row in range(BOARD_SIZE):
-        for col in range(BOARD_SIZE):
-            color = BROWN_LIGHT if (row + col) % 2 == 0 else BROWN_DARK
-            pygame.draw.rect(screen, color, (col * SQUARE_SIZE, row * SQUARE_SIZE + 100, SQUARE_SIZE, SQUARE_SIZE))
+def draw_board(up):
+    if up:
+        for row in range(BOARD_SIZE):
+            for col in range(BOARD_SIZE):
+                color = BROWN_LIGHT if (row + col) % 2 == 0 else BROWN_DARK
+                pygame.draw.rect(screen, color, (col * SQUARE_SIZE, row * SQUARE_SIZE + 100, SQUARE_SIZE, SQUARE_SIZE))
+    else:
+        for row in range(BOARD_SIZE):
+            for col in range(BOARD_SIZE):
+                color = BROWN_DARK if (row + col) % 2 == 0 else BROWN_LIGHT
+                pygame.draw.rect(screen, color, (col * SQUARE_SIZE, row * SQUARE_SIZE + 100, SQUARE_SIZE, SQUARE_SIZE))
 
-def draw_pieces(board, piece_images):
-    for row in range(BOARD_SIZE):
-        for col in range(BOARD_SIZE):
-            piece = board[row][col]
-            if piece and piece in piece_images:
-                screen.blit(piece_images[piece], (col * SQUARE_SIZE, row * SQUARE_SIZE + 100))
-            elif piece:
-                 # Fallback if image not loaded
-                 font = pygame.font.Font(None, 36)
-                 text = font.render(piece, True, WHITE if piece[0] == 'b' else BLACK)
-                 text_rect = text.get_rect(center=(col * SQUARE_SIZE + SQUARE_SIZE // 2, row * SQUARE_SIZE + SQUARE_SIZE // 2))
-                 screen.blit(text, text_rect)
+
+def draw_pieces(board, piece_images, up):
+    if up:
+        for row in range(BOARD_SIZE):
+            for col in range(BOARD_SIZE):
+                piece = board[row][col]
+                if piece and piece in piece_images:
+                    screen.blit(piece_images[piece], (col * SQUARE_SIZE, row * SQUARE_SIZE + 100))
+                elif piece:
+                    # Fallback if image not loaded
+                    font = pygame.font.Font(None, 36)
+                    text = font.render(piece, True, WHITE if piece[0] == 'b' else BLACK)
+                    text_rect = text.get_rect(center=(col * SQUARE_SIZE + SQUARE_SIZE // 2, row * SQUARE_SIZE + SQUARE_SIZE // 2))
+                    screen.blit(text, text_rect)
+    else:
+        for row in range(BOARD_SIZE):
+            for col in range(BOARD_SIZE):
+                piece = board[row][col]
+                if piece and piece in piece_images:
+                    screen.blit(piece_images[piece], ((7 - col) * SQUARE_SIZE, (7 - row) * SQUARE_SIZE + 100))
+                elif piece:
+                    # Fallback if image not loaded
+                    font = pygame.font.Font(None, 36)
+                    text = font.render(piece, True, WHITE if piece[0] == 'b' else BLACK)
+                    text_rect = text.get_rect(center=(col * SQUARE_SIZE + SQUARE_SIZE // 2, row * SQUARE_SIZE + SQUARE_SIZE // 2))
+                    screen.blit(text, text_rect)
+
 
 def draw_possible_moves(moves):
     for row, col in moves:
@@ -391,11 +460,13 @@ def draw_possible_moves(moves):
             s.fill(DARK_HIGHLIGHT)
         screen.blit(s, (col * SQUARE_SIZE, row * SQUARE_SIZE + 100))
 
+
 def draw_selected_piece(selected_piece_pos):
     if selected_piece_pos:
         row, col = selected_piece_pos
         # Draw a yellow border around the selected piece
         pygame.draw.rect(screen, (255, 255, 0), (col * SQUARE_SIZE, row * SQUARE_SIZE + 100, SQUARE_SIZE, SQUARE_SIZE), 3)
+
 
 # --- Main Game Loop ---
 running = True
@@ -411,7 +482,10 @@ while running:
 
                 if selected_piece_pos is None:
                     # No piece selected, try to select one
-                    piece_at_click = board[clicked_row][clicked_col]
+                    if current_turn == "white":  # If the board is right-side up
+                        piece_at_click = board[clicked_row][clicked_col]
+                    else:
+                        piece_at_click = board[7 - clicked_row][7 - clicked_col]
                     if piece_at_click and get_piece_color(piece_at_click) == current_turn:
                         selected_piece_pos = (clicked_row, clicked_col)
                         possible_moves = get_all_possible_moves(board, clicked_row, clicked_col)
@@ -426,7 +500,10 @@ while running:
                         possible_moves = []
                     elif is_valid_move(board, start_row, start_col, end_row, end_col):
                         # Valid move, make it and switch turns
-                        make_move(board, start_row, start_col, end_row, end_col)
+                        if current_turn == "white":
+                            make_move(board, start_row, start_col, end_row, end_col, True)
+                        else:
+                            make_move(board, start_row, start_col, end_row, end_col, False)
                         switch_turn()
                         # Reset selection after the move
                         selected_piece_pos = None
@@ -436,17 +513,22 @@ while running:
                         selected_piece_pos = None
                         possible_moves = []
             else:
-                # Buttons outside the board
-                draw_board()
-
+                # Code for buttons outside the board will go here
+                if current_turn == "white":
+                    draw_board(True)
+                else:
+                    draw_board(False)
 
     # Drawing
     screen.fill(DARK_HIGHLIGHT)
-    draw_board()
-    draw_pieces(board, piece_images)
+    if current_turn == "white":
+        draw_board(True)
+        draw_pieces(board, piece_images, True)
+    else:
+        draw_board(False)
+        draw_pieces(board, piece_images, False)
     draw_possible_moves(possible_moves)
     draw_selected_piece(selected_piece_pos)
-
 
     # Update the display
     pygame.display.flip()
