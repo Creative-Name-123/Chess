@@ -36,7 +36,7 @@ initial_board = [
     [None, None, None, None, None, None, None, None],
     [None, None, None, None, None, None, None, None],
     [None, None, None, None, None, None, None, None],
-    ['wP', 'wP', 'wP', None, 'wP', 'wP', 'wP', 'wP'],
+    ['wP', 'wP', 'wP', 'wP', 'wP', 'wP', 'wP', 'wP'],
     ['wR', 'wN', 'wB', 'wQ', 'wK', 'wB', 'wN', 'wR']
 ]
 
@@ -85,11 +85,14 @@ def get_piece_color(piece):
         return 'black'
     return None
 
+
 def is_on_board(row, col):
-    return 0 <= row < BOARD_SIZE and 0 <= col < BOARD_SIZE
+    return 0 <= row < BOARD_SIZE and 0 <= col < BOARD_SIZE  # TODO: remove this or something?
+
 
 def is_empty(board, row, col):
     return board[row][col] is None
+
 
 def is_opponent(board, row, col, current_color):
     piece = board[row][col]
@@ -98,12 +101,14 @@ def is_opponent(board, row, col, current_color):
         return piece_color is not None and piece_color != current_color
     return False
 
+
 def has_moved(piece_code, start_col=None):
     for move in moves:
         if move.startswith(piece_code):
             if start_col is None or f": {start_col}," in move:
                 return True
     return False
+
 
 def get_pawn_attacks(board, row, col, color):
     direction = -1 if color == 'w' else 1
@@ -113,6 +118,7 @@ def get_pawn_attacks(board, row, col, color):
         if is_on_board(r, c):
             attacks.append((r, c))
     return attacks
+
 
 def is_square_attacked(board, row, col, by_color):
     enemy = by_color
@@ -157,7 +163,7 @@ def is_square_attacked(board, row, col, by_color):
 
 # --- Movement Functions ---
 
-def get_pawn_moves(board, row, col, color, up):  # TODO: Fix white pawns only moving backwards
+def get_pawn_moves(board, row, col, color, up):
     moves = []
     # Determine move direction based on flip state
     if up:
@@ -169,10 +175,13 @@ def get_pawn_moves(board, row, col, color, up):  # TODO: Fix white pawns only mo
     one_step = row + dir
     if is_on_board(one_step, col) and is_empty(board, one_step, col):
         moves.append((one_step, col))
-        start_row = 6 if color == 'w' else 1
-        two_step = row + 2 * dir
-        if row == start_row and is_on_board(two_step, col) and is_empty(board, two_step, col):
-            moves.append((two_step, col))
+        if color == "w":
+            starting_row = 6
+        else:
+            starting_row = 1
+        print(row)
+        if row == starting_row:  # and is_empty(board, one_step + dir, col):
+            moves.append((one_step + dir, col))
     # Captures
     for dc in [-1, 1]:
         r, c = row + dir, col + dc
@@ -261,7 +270,10 @@ def get_all_possible_moves(board, row, col):
     color = get_piece_color(piece)
     p_type = piece[1]
     if p_type == 'P':
-        return get_pawn_moves(board, row, col, color, True)  # TODO: change True to False? Just sometimes?
+        if current_turn == "white":
+            return get_pawn_moves(board, row, col, color, False)
+        else:
+            return get_pawn_moves(board, row, col, color, True)
     elif p_type == 'R':
         return get_rook_moves(board, row, col, color)
     elif p_type == 'N':
@@ -326,9 +338,11 @@ def make_move(board, start_row, start_col, end_row, end_col, up):
     board[end_row][end_col] = piece
     board[start_row][start_col] = None
 
+
 def switch_turn():
     global current_turn
     current_turn = 'black' if current_turn == 'white' else 'white'
+
 
 # --- Coordinate Transformation Helpers ---
 
@@ -338,12 +352,14 @@ def get_display_position(row, col, up):
     else:
         return 7 - row, 7 - col
 
+
 def get_board_position(mouse_x, mouse_y, up):
     col = mouse_x // SQUARE_SIZE
     row = (mouse_y - 100) // SQUARE_SIZE
     if not up:
         return 7 - row, 7 - col
     return row, col
+
 
 # --- Drawing Functions ---
 
@@ -359,6 +375,7 @@ def draw_board(up):
                 x = display_col * SQUARE_SIZE
                 y = display_row * SQUARE_SIZE + 100
             pygame.draw.rect(screen, color, (x, y, SQUARE_SIZE, SQUARE_SIZE))
+
 
 def draw_pieces(board, piece_images, up):
     for row in range(BOARD_SIZE):
@@ -379,6 +396,7 @@ def draw_pieces(board, piece_images, up):
                 text_rect = text.get_rect(center=(x, y))
                 screen.blit(text, text_rect)
 
+
 def draw_possible_moves(possible_moves, up):
     for row, col in possible_moves:
         display_row, display_col = get_display_position(row, col, up)
@@ -387,6 +405,7 @@ def draw_possible_moves(possible_moves, up):
         s = pygame.Surface((SQUARE_SIZE, SQUARE_SIZE), pygame.SRCALPHA)
         s.fill(GREEN_HIGHLIGHT)
         screen.blit(s, (x, y))
+
 
 def draw_selected_piece(selected_piece_pos, up):
     if selected_piece_pos:
@@ -409,7 +428,7 @@ while running:
         if event.type == pygame.QUIT:
             running = False
 
-        elif event.type == pygame.KEYDOWN:
+        elif event.type == pygame.KEYDOWN:  # When the 'f' key is pressed
             if event.key == pygame.K_f:
                 # Toggle flip
                 up = not up
