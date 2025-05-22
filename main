@@ -1,8 +1,11 @@
 import pygame
+import pygame_menu as pm
 import sys
 import io
 import requests
 import random
+
+# Helpful website for settings: https://www.geeksforgeeks.org/create-settings-menu-in-python-pygame/
 
 # Initialize Pygame
 pygame.init()
@@ -308,7 +311,6 @@ def make_move(board, start_row, start_col, end_row, end_col, up):
     if not up:
         start_row, start_col = 7 - start_row, 7 - start_col
         end_row, end_col = 7 - end_row, 7 - end_col
-
     piece = board[start_row][start_col]
     if not piece:
         return
@@ -316,12 +318,11 @@ def make_move(board, start_row, start_col, end_row, end_col, up):
     move_record = f"{piece}: {start_col}, {start_row} to {end_col}, {end_row}"
     moves.append(move_record)
     print(move_record)
-
-    # Handle castling for king
+    # Castling
     if piece[1] == 'K':
         # King side
         if end_col == 6:
-            # move rook
+            # Move rook
             if piece == 'wK':
                 board[7][5] = board[7][7]
                 board[7][7] = None
@@ -336,16 +337,44 @@ def make_move(board, start_row, start_col, end_row, end_col, up):
             else:
                 board[0][3] = board[0][0]
                 board[0][0] = None
-
-    # Handle pawn promotion
+    # Pawn promotion
     if piece[1] == 'P':
         if (end_row == 0 and piece[0] == 'w') or (end_row == 7 and piece[0] == 'b'):
-            # Promote to Queen for simplicity
-            promoted_piece = piece[0] + 'Q'
-            board[end_row][end_col] = promoted_piece
+            board[end_row][end_col] = piece
             board[start_row][start_col] = None
-            return
+            deciding_on_promotion = True
+            global piece_images
+            if current_turn == "white":
+                pro_piece = ["wQ", "wR", "wB", "wN"]
+                for i in range(len(pro_piece)):
+                    if pro_piece[i] in piece_images:
+                        print(pro_piece[i])
+                        screen.blit(piece_images[pro_piece[i]], (20 +  i * SQUARE_SIZE, 50))
+                    else:
+                        # fallback: draw text
+                        font = pygame.font.Font(None, 36)
+                        text = font.render(pro_piece[i], True, WHITE)
+                        text_rect = text.get_rect(center=(20 +  i * SQUARE_SIZE, 50))
+                        screen.blit(text, text_rect)
+            else:
+                pro_piece = ["bQ", "bR", "bB", "bN"]
+                for i in range(len(pro_piece)):
+                    if pro_piece[i] in piece_images:
+                        screen.blit(piece_images[pro_piece[i]], (20 + i * SQUARE_SIZE, 50))
+                    else:
+                        # fallback: draw text
+                        font = pygame.font.Font(None, 36)
+                        text = font.render(pro_piece[i], True, BLACK)
+                        text_rect = text.get_rect(center=(20 +  i * SQUARE_SIZE, 50))
+                        screen.blit(text, text_rect)
+            while deciding_on_promotion:
+                for event in pygame.event.get():
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        mouse_x, mouse_y = event.pos
+                        print((mouse_x, mouse_y))
 
+            board[end_row][end_col] = piece[0] + 'Q'
+            return
     # Move the piece
     board[end_row][end_col] = piece
     board[start_row][start_col] = None
@@ -389,7 +418,8 @@ def draw_board(up):
             pygame.draw.rect(screen, colour, (x, y, SQUARE_SIZE, SQUARE_SIZE))
 
 
-def draw_pieces(board, piece_images, up):
+def draw_pieces(board, up):
+    global piece_images
     for row in range(BOARD_SIZE):
         for col in range(BOARD_SIZE):
             piece = board[row][col]
@@ -404,7 +434,7 @@ def draw_pieces(board, piece_images, up):
                 x = display_col * SQUARE_SIZE + SQUARE_SIZE // 2
                 y = display_row * SQUARE_SIZE + 100 + SQUARE_SIZE // 2
                 font = pygame.font.Font(None, 36)
-                text = font.render(piece, True, WHITE if piece[0] == 'b' else BLACK)
+                text = font.render(piece, True, WHITE if piece[0] == 'w' else BLACK)
                 text_rect = text.get_rect(center=(x, y))
                 screen.blit(text, text_rect)
 
@@ -428,7 +458,7 @@ def draw_selected_piece(selected_piece_pos, up):
         pygame.draw.rect(screen, (255, 255, 0), (x, y, SQUARE_SIZE, SQUARE_SIZE), 3)
 
 
-# --- Main Loop ---
+# --- Main Loop for the menu and the game ---
 
 def draw_menu():
     screen.fill(BLACK)
@@ -482,7 +512,7 @@ def chess_game():
     global SCREEN_WIDTH
     global selected_piece_pos
     global possible_moves
-    global menu_options  # To check what option is selected (ex. pvp offline or pvp online)
+    global menu_options
     global selected_option
     running = True
     while running:
@@ -502,11 +532,7 @@ def chess_game():
 
                     if selected_piece_pos is None:
                         # Select a piece
-                        if current_turn == 'white':
-                            piece_at_click = board[clicked_row][clicked_col]
-                        else:
-                            # For flipped, selection is from inverted position (or should be)
-                            piece_at_click = board[clicked_row][clicked_col]
+                        piece_at_click = board[clicked_row][clicked_col]
                         if piece_at_click and get_piece_colour(piece_at_click) == current_turn:
                             selected_piece_pos = (clicked_row, clicked_col)
                             possible_moves = get_all_possible_moves(board, clicked_row, clicked_col)
@@ -529,7 +555,7 @@ def chess_game():
         # Drawing
         screen.fill(DARK_HIGHLIGHT)
         draw_board(up)
-        draw_pieces(board, piece_images, up)
+        draw_pieces(board, up)
         draw_possible_moves(possible_moves, up)
         draw_selected_piece(selected_piece_pos, up)
 
