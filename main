@@ -30,7 +30,7 @@ GRAY = (100, 100, 100)
 BLACK = (0, 0, 0)
 BROWN_LIGHT = (222, 184, 135)
 BROWN_DARK = (139, 69, 19)
-GREEN_HIGHLIGHT = (0, 255, 0, 80)  # For highlighting possible moves
+GREEN_HIGHLIGHT = (0, 255, 0, 80)  # For highlighting possible moves (also for the background)
 DARK_HIGHLIGHT = (0, 50, 0, 200)
 
 # Board size and square size
@@ -342,39 +342,51 @@ def make_move(board, start_row, start_col, end_row, end_col, up):
         if (end_row == 0 and piece[0] == 'w') or (end_row == 7 and piece[0] == 'b'):
             board[end_row][end_col] = piece
             board[start_row][start_col] = None
-            deciding_on_promotion = True
+            draw_pieces(board, up)
             global piece_images
             if current_turn == "white":
                 pro_piece = ["wQ", "wR", "wB", "wN"]
                 for i in range(len(pro_piece)):
                     if pro_piece[i] in piece_images:
                         print(pro_piece[i])
-                        screen.blit(piece_images[pro_piece[i]], (20 +  i * SQUARE_SIZE, 50))
+                        screen.blit(piece_images[pro_piece[i]], ((3 + i) * SQUARE_SIZE, -SQUARE_SIZE + 100))
                     else:
                         # fallback: draw text
                         font = pygame.font.Font(None, 36)
                         text = font.render(pro_piece[i], True, WHITE)
-                        text_rect = text.get_rect(center=(20 +  i * SQUARE_SIZE, 50))
+                        text_rect = text.get_rect(center=((3 + i) * SQUARE_SIZE, -SQUARE_SIZE + 100))
                         screen.blit(text, text_rect)
             else:
                 pro_piece = ["bQ", "bR", "bB", "bN"]
                 for i in range(len(pro_piece)):
                     if pro_piece[i] in piece_images:
-                        screen.blit(piece_images[pro_piece[i]], (20 + i * SQUARE_SIZE, 50))
+                        screen.blit(piece_images[pro_piece[i]], ((3 + i) * SQUARE_SIZE, -SQUARE_SIZE + 100))
                     else:
                         # fallback: draw text
                         font = pygame.font.Font(None, 36)
                         text = font.render(pro_piece[i], True, BLACK)
-                        text_rect = text.get_rect(center=(20 +  i * SQUARE_SIZE, 50))
+                        text_rect = text.get_rect(center=((3 + i) * SQUARE_SIZE, -SQUARE_SIZE + 100))
                         screen.blit(text, text_rect)
-            while deciding_on_promotion:
+            pygame.display.update()
+            while True:
                 for event in pygame.event.get():
                     if event.type == pygame.MOUSEBUTTONDOWN:
                         mouse_x, mouse_y = event.pos
                         print((mouse_x, mouse_y))
-
-            board[end_row][end_col] = piece[0] + 'Q'
-            return
+                        # (150, 50) to (350, 100)
+                        if 50 <= mouse_y <= 100:
+                            if 150 <= mouse_x <= 150 + SQUARE_SIZE:
+                                board[end_row][end_col] = piece[0] + 'Q'
+                                return
+                            if 150 + SQUARE_SIZE <= mouse_x <= 150 + 2 * SQUARE_SIZE:
+                                board[end_row][end_col] = piece[0] + 'R'
+                                return
+                            if 150 + 2 * SQUARE_SIZE <= mouse_x <= 150 + 3 * SQUARE_SIZE:
+                                board[end_row][end_col] = piece[0] + 'B'
+                                return
+                            if 150 + 3 * SQUARE_SIZE <= mouse_x <= 150 + 4 * SQUARE_SIZE:
+                                board[end_row][end_col] = piece[0] + 'N'
+                                return
     # Move the piece
     board[end_row][end_col] = piece
     board[start_row][start_col] = None
