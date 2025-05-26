@@ -1,9 +1,9 @@
 import pygame
-import pygame_menu as pm
 import sys
 import io
 import requests
 import random
+import math
 
 # Helpful website for settings: https://www.geeksforgeeks.org/create-settings-menu-in-python-pygame/
 
@@ -17,6 +17,7 @@ screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT))
 pygame.display.set_caption("Chess Menu")
 
 # Set up fonts
+smallFont = pygame.font.SysFont(None, 20)
 font = pygame.font.SysFont(None, 40)
 bigFont = pygame.font.SysFont(None, 100)
 
@@ -50,6 +51,10 @@ initial_board = [
 ]
 
 moves = []
+real_notation = []
+
+letters = ["a", "b", "c", "d", "e", "f", "g", "h"]
+numbers = ["1", "2", "3", "4", "5", "6", "7", "8"]
 
 # Deep copy of initial_board for game state
 board = [row[:] for row in initial_board]
@@ -316,6 +321,12 @@ def make_move(board, start_row, start_col, end_row, end_col, up):
         return
     # Record move
     move_record = f"{piece}: {start_col}, {start_row} to {end_col}, {end_row}"
+    if board[start_row][start_col][1] == "P":  # TODO: Finish notations
+        real_notation.append(letters[end_col] + numbers[7 - end_row])
+        print(real_notation[-1])
+    else:
+        real_notation.append(letters[end_col] + numbers[7 - end_row])
+        print(real_notation[-1])
     moves.append(move_record)
     print(move_record)
     # Castling
@@ -570,6 +581,32 @@ def chess_game():
         draw_pieces(board, up)
         draw_possible_moves(possible_moves, up)
         draw_selected_piece(selected_piece_pos, up)
+        text = smallFont.render(f"Moves: {len(moves)}", True, WHITE)
+        rect = text.get_rect(center=(SCREEN_WIDTH // 2 + 80, SCREEN_HEIGHT // 2 - 190))
+        screen.blit(text, rect)
+        for i in range(min(len(moves), 36)):
+            text = smallFont.render(f"{moves[i]}", True, WHITE)
+            if ".5" in str(i / 2):
+                rect = text.get_rect(center=(SCREEN_WIDTH // 2 + 215, SCREEN_HEIGHT // 2 - 160 + math.floor(i // 2) * 15))
+            else:
+                rect = text.get_rect(center=(SCREEN_WIDTH // 2 + 95, SCREEN_HEIGHT // 2 - 160 + math.floor(i // 2) * 15))
+            screen.blit(text, rect)
+        if up:
+            for i in range(8):
+                if ".5" in str(i / 2):
+                    text = smallFont.render(letters[i], True, BROWN_DARK)
+                else:
+                    text = smallFont.render(letters[i], True, BROWN_LIGHT)
+                rect = text.get_rect(center=(-6 + SQUARE_SIZE * (i + 1), SCREEN_HEIGHT // 2 + 192))
+                screen.blit(text, rect)
+                if ".5" in str(i / 2):
+                    text = smallFont.render(numbers[i], True, BROWN_DARK)
+                else:
+                    text = smallFont.render(numbers[i], True, BROWN_LIGHT)
+                rect = text.get_rect(center=(5, SCREEN_HEIGHT // 2 + 207 - SQUARE_SIZE * (i + 1)))
+                screen.blit(text, rect)
+        else:
+            text = smallFont.render("a    b    c    d    e    f    g    h", True, WHITE)
 
         pygame.display.flip()
 
