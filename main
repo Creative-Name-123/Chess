@@ -130,16 +130,6 @@ def has_moved(piece_code, start_col=None):
     return False
 
 
-def get_pawn_attacks(board, row, col, colour):
-    direction = -1 if colour == 'w' else 1
-    attacks = []
-    for dc in [-1, 1]:
-        r, c = row + direction, col + dc
-        if is_on_board(r, c):
-            attacks.append((r, c))
-    return attacks
-
-
 def is_square_attacked(board, row, col, by_colour):
     enemy = by_colour
     directions = [(-1, -1), (-1, 0), (-1, 1),
@@ -311,6 +301,8 @@ def is_valid_move(board, start_row, start_col, end_row, end_col):
     return (end_row, end_col) in get_all_possible_moves(board, start_row, start_col)
 
 
+# Chess notation is in this function
+
 def make_move(board, start_row, start_col, end_row, end_col, up):
     # Normalize positions if board is flipped
     if not up:
@@ -321,14 +313,85 @@ def make_move(board, start_row, start_col, end_row, end_col, up):
         return
     # Record move
     move_record = f"{piece}: {start_col}, {start_row} to {end_col}, {end_row}"
-    if board[start_row][start_col][1] == "P":  # TODO: Finish notations
-        real_notation.append(letters[end_col] + numbers[7 - end_row])
-        print(real_notation[-1])
-    else:
-        real_notation.append(letters[end_col] + numbers[7 - end_row])
-        print(real_notation[-1])
     moves.append(move_record)
     print(move_record)
+    # Chess Notation
+    if current_turn == "white":  # Text characters are different and white's moves start with the move number
+        if board[start_row][start_col][1] == "P":
+            if not end_row == 0:  # If not pawn promotion
+                if board[end_row][end_col] is None:  # If this isn't a capture
+                    real_notation.append(str(math.floor(len(moves) / 2) + 1) + ". " + letters[end_col] + numbers[7 - end_row])
+                else:
+                    real_notation.append(f"{str(math.floor(len(moves) / 2) + 1)}. {letters[start_col]}x{letters[end_col]}{numbers[7 - end_row]}")
+        elif board[start_row][start_col][1] == "R":
+            if board[end_row][end_col] is None:
+                real_notation.append(str(math.floor(len(moves) / 2) + 1) + ". ♖" + letters[end_col] + numbers[7 - end_row])
+            else:
+                real_notation.append(f"{str(math.floor(len(moves) / 2) + 1)}. ♖x{letters[end_col]}{numbers[7 - end_row]}")
+        elif board[start_row][start_col][1] == "N":
+            if board[end_row][end_col] is None:
+                real_notation.append(str(math.floor(len(moves) / 2) + 1) + ". ♘" + letters[end_col] + numbers[7 - end_row])
+            else:
+                real_notation.append(f"{str(math.floor(len(moves) / 2) + 1)}. ♘x{letters[end_col]}{numbers[7 - end_row]}")
+        elif board[start_row][start_col][1] == "B":
+            if board[end_row][end_col] is None:
+                real_notation.append(str(math.floor(len(moves) / 2) + 1) + ". ♗" + letters[end_col] + numbers[7 - end_row])
+            else:
+                real_notation.append(f"{str(math.floor(len(moves) / 2) + 1)}. ♗x{letters[end_col]}{numbers[7 - end_row]}")
+        elif board[start_row][start_col][1] == "Q":
+            if board[end_row][end_col] is None:
+                real_notation.append(str(math.floor(len(moves) / 2) + 1) + ". ♕" + letters[end_col] + numbers[7 - end_row])
+            else:
+                real_notation.append(f"{str(math.floor(len(moves) / 2) + 1)}. ♕x{letters[end_col]}{numbers[7 - end_row]}")
+        elif board[start_row][start_col][1] == "K":
+            if abs(start_col - end_col) > 1:
+                if end_col == 2:
+                    real_notation.append(str(math.floor(len(moves) / 2) + 1) + ". O-O-O")
+                else:
+                    real_notation.append(str(math.floor(len(moves) / 2) + 1) + ". O-O")
+            else:
+                if board[end_row][end_col] is None:
+                    real_notation.append(str(math.floor(len(moves) / 2) + 1) + ". ♔" + letters[end_col] + numbers[7 - end_row])
+                else:
+                    real_notation.append(f"{str(math.floor(len(moves) / 2) + 1)}. ♔x{letters[end_col]}{numbers[7 - end_row]}")
+    else:
+        if board[start_row][start_col][1] == "P":
+            if not end_row == 7:
+                if board[end_row][end_col] is None:  # If this isn't a capture
+                    real_notation.append(letters[end_col] + numbers[7 - end_row])
+                else:
+                    real_notation.append(f"{letters[start_col]}x{letters[end_col]}{numbers[7 - end_row]}")
+        elif board[start_row][start_col][1] == "R":
+            if board[end_row][end_col] is None:
+                real_notation.append("♜" + letters[end_col] + numbers[7 - end_row])
+            else:
+                real_notation.append(f"♜x{letters[end_col]}{numbers[7 - end_row]}")
+        elif board[start_row][start_col][1] == "N":
+            if board[end_row][end_col] is None:
+                real_notation.append("♞" + letters[end_col] + numbers[7 - end_row])
+            else:
+                real_notation.append(f"♞x{letters[end_col]}{numbers[7 - end_row]}")
+        elif board[start_row][start_col][1] == "B":
+            if board[end_row][end_col] is None:
+                real_notation.append("♝" + letters[end_col] + numbers[7 - end_row])
+            else:
+                real_notation.append(f"♝x{letters[end_col]}{numbers[7 - end_row]}")
+        elif board[start_row][start_col][1] == "Q":
+            if board[end_row][end_col] is None:
+                real_notation.append("♛" + letters[end_col] + numbers[7 - end_row])
+            else:
+                real_notation.append(f"♛x{letters[end_col]}{numbers[7 - end_row]}")
+        elif board[start_row][start_col][1] == "K":
+            if abs(start_col - end_col) > 1:
+                if end_col == 2:
+                    real_notation.append("O-O-O")
+                else:
+                    real_notation.append("O-O")
+            else:
+                if board[end_row][end_col] is None:
+                    real_notation.append("♚" + letters[end_col] + numbers[7 - end_row])
+                else:
+                    real_notation.append(f"♔x{letters[end_col]}{numbers[7 - end_row]}")
     # Castling
     if piece[1] == 'K':
         # King side
@@ -359,7 +422,6 @@ def make_move(board, start_row, start_col, end_row, end_col, up):
                 pro_piece = ["wQ", "wR", "wB", "wN"]
                 for i in range(len(pro_piece)):
                     if pro_piece[i] in piece_images:
-                        print(pro_piece[i])
                         screen.blit(piece_images[pro_piece[i]], ((3 + i) * SQUARE_SIZE, -SQUARE_SIZE + 100))
                     else:
                         # fallback: draw text
@@ -379,25 +441,64 @@ def make_move(board, start_row, start_col, end_row, end_col, up):
                         text_rect = text.get_rect(center=((3 + i) * SQUARE_SIZE, -SQUARE_SIZE + 100))
                         screen.blit(text, text_rect)
             pygame.display.update()
-            while True:
+            while True:  # This loop waits for player input (deciding what to promote pawn to) then appends the correct chess notation
                 for event in pygame.event.get():
                     if event.type == pygame.MOUSEBUTTONDOWN:
                         mouse_x, mouse_y = event.pos
-                        print((mouse_x, mouse_y))
-                        # (150, 50) to (350, 100)
                         if 50 <= mouse_y <= 100:
                             if 150 <= mouse_x <= 150 + SQUARE_SIZE:
                                 board[end_row][end_col] = piece[0] + 'Q'
+                                if current_turn == "white":
+                                    if board[end_row][end_col] is None:
+                                        real_notation.append(f"{str(math.floor(len(moves) / 2) + 1)}. {letters[end_col]}8=♕")
+                                    else:
+                                        real_notation.append(f"{str(math.floor(len(moves) / 2) + 1)}. {letters[start_col]}x{letters[end_col]}8=♕")
+                                else:
+                                    if board[end_row][end_col] is None:
+                                        real_notation.append(f"{str(math.floor(len(moves) / 2) + 1)}. {letters[end_col]}1=♛")
+                                    else:
+                                        real_notation.append(f"{str(math.floor(len(moves) / 2) + 1)}. {letters[start_col]}x{letters[end_col]}1=♛")
                                 return
                             if 150 + SQUARE_SIZE <= mouse_x <= 150 + 2 * SQUARE_SIZE:
                                 board[end_row][end_col] = piece[0] + 'R'
+                                if current_turn == "white":
+                                    if board[end_row][end_col] is None:
+                                        real_notation.append(f"{str(math.floor(len(moves) / 2) + 1)}. {letters[end_col]}8=♖")
+                                    else:
+                                        real_notation.append(f"{str(math.floor(len(moves) / 2) + 1)}. {letters[start_col]}x{letters[end_col]}8=♖")
+                                else:
+                                    if board[end_row][end_col] is None:
+                                        real_notation.append(f"{str(math.floor(len(moves) / 2) + 1)}. {letters[end_col]}1=♜")
+                                    else:
+                                        real_notation.append(f"{str(math.floor(len(moves) / 2) + 1)}. {letters[start_col]}x{letters[end_col]}1=♜")
                                 return
                             if 150 + 2 * SQUARE_SIZE <= mouse_x <= 150 + 3 * SQUARE_SIZE:
                                 board[end_row][end_col] = piece[0] + 'B'
+                                if current_turn == "white":
+                                    if board[end_row][end_col] is None:
+                                        real_notation.append(f"{str(math.floor(len(moves) / 2) + 1)}. {letters[end_col]}8=♗")
+                                    else:
+                                        real_notation.append(f"{str(math.floor(len(moves) / 2) + 1)}. {letters[start_col]}x{letters[end_col]}8=♗")
+                                else:
+                                    if board[end_row][end_col] is None:
+                                        real_notation.append(f"{str(math.floor(len(moves) / 2) + 1)}. {letters[end_col]}1=♝")
+                                    else:
+                                        real_notation.append(f"{str(math.floor(len(moves) / 2) + 1)}. {letters[start_col]}x{letters[end_col]}1=♝")
                                 return
                             if 150 + 3 * SQUARE_SIZE <= mouse_x <= 150 + 4 * SQUARE_SIZE:
                                 board[end_row][end_col] = piece[0] + 'N'
+                                if current_turn == "white":
+                                    if board[end_row][end_col] is None:
+                                        real_notation.append(f"{str(math.floor(len(moves) / 2) + 1)}. {letters[end_col]}8=♘")
+                                    else:
+                                        real_notation.append(f"{str(math.floor(len(moves) / 2) + 1)}. {letters[start_col]}x{letters[end_col]}8=♘")
+                                else:
+                                    if board[end_row][end_col] is None:
+                                        real_notation.append(f"{str(math.floor(len(moves) / 2) + 1)}. {letters[end_col]}1=♞")
+                                    else:
+                                        real_notation.append(f"{str(math.floor(len(moves) / 2) + 1)}. {letters[start_col]}x{letters[end_col]}1=♞")
                                 return
+    print(real_notation[-1])
     # Move the piece
     board[end_row][end_col] = piece
     board[start_row][start_col] = None
@@ -503,7 +604,6 @@ def main():
     global selected_option
     clock = pygame.time.Clock()
     in_menu = True
-
     while in_menu:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -524,7 +624,6 @@ def main():
                     elif menu_options[selected_option] == "Quit":
                         pygame.quit()
                         sys.exit()
-
         draw_menu()
         clock.tick(60)
 
@@ -542,17 +641,14 @@ def chess_game():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-
             elif event.type == pygame.KEYDOWN:  # When the 'f' key is pressed
                 if event.key == pygame.K_f:
                     # Toggle flip
                     up = not up
-
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_x, mouse_y = event.pos
                 if 100 < mouse_y < 100 + BOARD_SIZE * SQUARE_SIZE:
                     clicked_row, clicked_col = get_board_position(mouse_x, mouse_y, up)
-
                     if selected_piece_pos is None:
                         # Select a piece
                         piece_at_click = board[clicked_row][clicked_col]
@@ -567,14 +663,12 @@ def chess_game():
                             end_row, end_col = 7 - clicked_row, 7 - clicked_col
                         else:
                             end_row, end_col = clicked_row, clicked_col
-
                         if is_valid_move(board, start_row, start_col, end_row, end_col):
                             make_move(board, start_row, start_col, end_row, end_col, up)
                             switch_turn()
                         # Deselect after move attempt
                         selected_piece_pos = None
                         possible_moves = []
-
         # Drawing
         screen.fill(DARK_HIGHLIGHT)
         draw_board(up)
@@ -584,30 +678,32 @@ def chess_game():
         text = smallFont.render(f"Moves: {len(moves)}", True, WHITE)
         rect = text.get_rect(center=(SCREEN_WIDTH // 2 + 80, SCREEN_HEIGHT // 2 - 190))
         screen.blit(text, rect)
-        for i in range(min(len(moves), 36)):
-            text = smallFont.render(f"{moves[i]}", True, WHITE)
+        for i in range(len(moves)):
+            text = smallFont.render(f"{real_notation[i]}", True, WHITE)
             if ".5" in str(i / 2):
                 rect = text.get_rect(center=(SCREEN_WIDTH // 2 + 215, SCREEN_HEIGHT // 2 - 160 + math.floor(i // 2) * 15))
             else:
                 rect = text.get_rect(center=(SCREEN_WIDTH // 2 + 95, SCREEN_HEIGHT // 2 - 160 + math.floor(i // 2) * 15))
             screen.blit(text, rect)
-        if up:
-            for i in range(8):
-                if ".5" in str(i / 2):
-                    text = smallFont.render(letters[i], True, BROWN_DARK)
-                else:
-                    text = smallFont.render(letters[i], True, BROWN_LIGHT)
+        for i in range(8):
+            if (".5" in str(i / 2) and up) or (not ".5" in str(i / 2) and not up):
+                text = smallFont.render(letters[i], True, BROWN_DARK)
+            else:
+                text = smallFont.render(letters[i], True, BROWN_LIGHT)
+            if up:
                 rect = text.get_rect(center=(-6 + SQUARE_SIZE * (i + 1), SCREEN_HEIGHT // 2 + 192))
-                screen.blit(text, rect)
-                if ".5" in str(i / 2):
-                    text = smallFont.render(numbers[i], True, BROWN_DARK)
-                else:
-                    text = smallFont.render(numbers[i], True, BROWN_LIGHT)
+            else:
+                rect = text.get_rect(center=(-6 + SQUARE_SIZE * (7 - i + 1), SCREEN_HEIGHT // 2 + 192))
+            screen.blit(text, rect)
+            if (".5" in str(i / 2) and up) or (not ".5" in str(i / 2) and not up):
+                text = smallFont.render(numbers[i], True, BROWN_DARK)
+            else:
+                text = smallFont.render(numbers[i], True, BROWN_LIGHT)
+            if up:
                 rect = text.get_rect(center=(5, SCREEN_HEIGHT // 2 + 207 - SQUARE_SIZE * (i + 1)))
-                screen.blit(text, rect)
-        else:
-            text = smallFont.render("a    b    c    d    e    f    g    h", True, WHITE)
-
+            else:
+                rect = text.get_rect(center=(5, SCREEN_HEIGHT // 2 + 207 - SQUARE_SIZE * (7 - i + 1)))
+            screen.blit(text, rect)
         pygame.display.flip()
 
 
