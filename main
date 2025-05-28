@@ -20,10 +20,14 @@ pygame.display.set_caption("Chess Menu")
 smallFont = pygame.font.SysFont(None, 20)
 font = pygame.font.SysFont(None, 40)
 bigFont = pygame.font.SysFont(None, 100)
+specialChar = pygame.font.SysFont("segoeuisymbol", 15)
 
 # Menu Options
 menu_options = ["Player vs. Player (offline)", "Player vs. Player (online)", "Options", "Quit"]
 selected_option = 0
+pvp_starting_time = ["Unlimited", 30, 10, 5, 4, 3, 2, 1]
+pvp_increment = [15, 10, 5, 4, 3, 2, 1, 0]
+pvp_selected_option = 0
 
 # Colours
 WHITE = (255, 255, 255)
@@ -600,11 +604,26 @@ def draw_menu():
     pygame.display.flip()
 
 
+def draw_pvp_menu():  # TODO: Finish editing this
+    screen.fill(BLACK)
+    for i, option in enumerate(pvp_increment):
+        if i == selected_option:
+            color = GRAY
+        else:
+            color = WHITE
+        text = font.render(option, True, color)
+        rect = text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + i * 50))
+        screen.blit(text, rect)
+    text = bigFont.render("Chess", True, GREEN_HIGHLIGHT)
+    rect = text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 100))
+    screen.blit(text, rect)
+    pygame.display.flip()
+
+
 def main():
     global selected_option
     clock = pygame.time.Clock()
-    in_menu = True
-    while in_menu:
+    while True:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -618,7 +637,6 @@ def main():
                     # Handle menu selection
                     if menu_options[selected_option].startswith("Player vs. "):
                         chess_game()
-                        # in_menu = False
                     elif menu_options[selected_option] == "Options":
                         print("Options selected")  # Implement options screen
                     elif menu_options[selected_option] == "Quit":
@@ -647,7 +665,7 @@ def chess_game():
                     up = not up
             elif event.type == pygame.MOUSEBUTTONDOWN:
                 mouse_x, mouse_y = event.pos
-                if 100 < mouse_y < 100 + BOARD_SIZE * SQUARE_SIZE:
+                if 100 < mouse_y < 100 + BOARD_SIZE * SQUARE_SIZE and mouse_x < BOARD_SIZE * SQUARE_SIZE:
                     clicked_row, clicked_col = get_board_position(mouse_x, mouse_y, up)
                     if selected_piece_pos is None:
                         # Select a piece
@@ -675,34 +693,38 @@ def chess_game():
         draw_pieces(board, up)
         draw_possible_moves(possible_moves, up)
         draw_selected_piece(selected_piece_pos, up)
-        text = smallFont.render(f"Moves: {len(moves)}", True, WHITE)
-        rect = text.get_rect(center=(SCREEN_WIDTH // 2 + 80, SCREEN_HEIGHT // 2 - 190))
+        # text = specialChar.render(f"Moves: {len(moves)}", True, WHITE)
+        # rect = text.get_rect(midleft=(SCREEN_WIDTH // 2 + 80, SCREEN_HEIGHT // 2 - 190))
+        # screen.blit(text, rect)
+        pygame.draw.rect(screen, GRAY, (475, 100, SQUARE_SIZE * 5, SQUARE_SIZE * BOARD_SIZE))  # Gray rectangle
+        text = specialChar.render("Moves:", True, WHITE)
+        rect = text.get_rect(midleft=(SCREEN_WIDTH // 2 + 95, SCREEN_HEIGHT // 2 - 175))
         screen.blit(text, rect)
         for i in range(len(moves)):
-            text = smallFont.render(f"{real_notation[i]}", True, WHITE)
+            text = specialChar.render(f"{real_notation[i]}", True, WHITE)
             if ".5" in str(i / 2):
-                rect = text.get_rect(center=(SCREEN_WIDTH // 2 + 215, SCREEN_HEIGHT // 2 - 160 + math.floor(i // 2) * 15))
+                rect = text.get_rect(midleft=(SCREEN_WIDTH // 2 + 185, SCREEN_HEIGHT // 2 - 160 + math.floor(i // 2) * 15))
             else:
-                rect = text.get_rect(center=(SCREEN_WIDTH // 2 + 95, SCREEN_HEIGHT // 2 - 160 + math.floor(i // 2) * 15))
+                rect = text.get_rect(midleft=(SCREEN_WIDTH // 2 + 95, SCREEN_HEIGHT // 2 - 160 + math.floor(i // 2) * 15))
             screen.blit(text, rect)
         for i in range(8):
             if (".5" in str(i / 2) and up) or (not ".5" in str(i / 2) and not up):
-                text = smallFont.render(letters[i], True, BROWN_DARK)
+                text = specialChar.render(letters[i], True, BROWN_DARK)
             else:
-                text = smallFont.render(letters[i], True, BROWN_LIGHT)
+                text = specialChar.render(letters[i], True, BROWN_LIGHT)
             if up:
-                rect = text.get_rect(center=(-6 + SQUARE_SIZE * (i + 1), SCREEN_HEIGHT // 2 + 192))
+                rect = text.get_rect(midleft=(-6 + SQUARE_SIZE * (i + 1), SCREEN_HEIGHT // 2 + 192))
             else:
-                rect = text.get_rect(center=(-6 + SQUARE_SIZE * (7 - i + 1), SCREEN_HEIGHT // 2 + 192))
+                rect = text.get_rect(midleft=(-6 + SQUARE_SIZE * (7 - i + 1), SCREEN_HEIGHT // 2 + 192))
             screen.blit(text, rect)
             if (".5" in str(i / 2) and up) or (not ".5" in str(i / 2) and not up):
-                text = smallFont.render(numbers[i], True, BROWN_DARK)
+                text = specialChar.render(numbers[i], True, BROWN_DARK)
             else:
-                text = smallFont.render(numbers[i], True, BROWN_LIGHT)
+                text = specialChar.render(numbers[i], True, BROWN_LIGHT)
             if up:
-                rect = text.get_rect(center=(5, SCREEN_HEIGHT // 2 + 207 - SQUARE_SIZE * (i + 1)))
+                rect = text.get_rect(midleft=(5, SCREEN_HEIGHT // 2 + 207 - SQUARE_SIZE * (i + 1)))
             else:
-                rect = text.get_rect(center=(5, SCREEN_HEIGHT // 2 + 207 - SQUARE_SIZE * (7 - i + 1)))
+                rect = text.get_rect(midleft=(5, SCREEN_HEIGHT // 2 + 207 - SQUARE_SIZE * (7 - i + 1)))
             screen.blit(text, rect)
         pygame.display.flip()
 
