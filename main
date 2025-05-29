@@ -19,15 +19,17 @@ pygame.display.set_caption("Chess Menu")
 # Set up fonts
 smallFont = pygame.font.SysFont(None, 20)
 font = pygame.font.SysFont(None, 40)
+medBigFont = pygame.font.SysFont(None, 70)
 bigFont = pygame.font.SysFont(None, 100)
-specialChar = pygame.font.SysFont("segoeuisymbol", 15)
+specialChar = pygame.font.SysFont("segoeuisymbol", 15)  # This font is needed to show chess pieces
 
 # Menu Options
 menu_options = ["Player vs. Player (offline)", "Player vs. Player (online)", "Options", "Quit"]
 selected_option = 0
-pvp_starting_time = ["Unlimited", 30, 10, 5, 4, 3, 2, 1]
-pvp_increment = [15, 10, 5, 4, 3, 2, 1, 0]
-pvp_selected_option = 0
+pvp_starting_time = ["Unlimited", "30", "15", "10", "5", "4", "3", "2", "1"]
+pvp_selected_option_1 = 0
+pvp_increment = ["15", "10", "5", "4", "3", "2", "1", "0"]
+pvp_selected_option_2 = 0
 
 # Colours
 WHITE = (255, 255, 255)
@@ -604,24 +606,49 @@ def draw_menu():
     pygame.display.flip()
 
 
-def draw_pvp_menu():  # TODO: Finish editing this
+def draw_pvp_menu_1():  # TODO: Finish editing this
     screen.fill(BLACK)
-    for i, option in enumerate(pvp_increment):
-        if i == selected_option:
+    for i, option in enumerate(pvp_starting_time):
+        if i == pvp_selected_option_1:
             color = GRAY
         else:
             color = WHITE
         text = font.render(option, True, color)
-        rect = text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + i * 50))
+        rect = text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 50 + i * 33))
         screen.blit(text, rect)
-    text = bigFont.render("Chess", True, GREEN_HIGHLIGHT)
+    text = medBigFont.render("Time Settings", True, GREEN_HIGHLIGHT)
+    rect = text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 175))
+    screen.blit(text, rect)
+    text = medBigFont.render("(starting time)", True, GREEN_HIGHLIGHT)
+    rect = text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 100))
+    screen.blit(text, rect)
+    pygame.display.flip()
+
+
+def draw_pvp_menu_2():
+    screen.fill(BLACK)
+    for i, option in enumerate(pvp_increment):
+        if i == pvp_selected_option_2:
+            color = GRAY
+        else:
+            color = WHITE
+        text = font.render(option, True, color)
+        rect = text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 50 + i * 33))
+        screen.blit(text, rect)
+    text = medBigFont.render("Time Settings", True, GREEN_HIGHLIGHT)
+    rect = text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 175))
+    screen.blit(text, rect)
+    text = medBigFont.render("(time increment every move)", True, GREEN_HIGHLIGHT)
     rect = text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 100))
     screen.blit(text, rect)
     pygame.display.flip()
 
 
 def main():
+    menu_screen = 0
     global selected_option
+    global pvp_selected_option_1
+    global pvp_selected_option_2
     clock = pygame.time.Clock()
     while True:
         for event in pygame.event.get():
@@ -630,19 +657,42 @@ def main():
                 sys.exit()
             elif event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_UP:
-                    selected_option = (selected_option - 1) % len(menu_options)
+                    if menu_screen == 0:
+                        selected_option = (selected_option - 1) % len(menu_options)
+                    elif menu_screen == 1:
+                        pvp_selected_option_1 = (pvp_selected_option_1 - 1) % len(pvp_starting_time)
+                    elif menu_screen == 2:
+                        pvp_selected_option_2 = (pvp_selected_option_2 - 1) % len(pvp_starting_time)
                 elif event.key == pygame.K_DOWN:
-                    selected_option = (selected_option + 1) % len(menu_options)
+                    if menu_screen == 0:
+                        selected_option = (selected_option + 1) % len(menu_options)
+                    elif menu_screen == 1:
+                        pvp_selected_option_1 = (pvp_selected_option_1 + 1) % len(pvp_starting_time)
+                    elif menu_screen == 2:
+                        pvp_selected_option_2 = (pvp_selected_option_2 + 1) % len(pvp_starting_time)
                 elif event.key == pygame.K_RETURN:
-                    # Handle menu selection
-                    if menu_options[selected_option].startswith("Player vs. "):
+                    # Menu selection
+                    if menu_screen == 0:
+                        if menu_options[selected_option].startswith("Player vs. "):
+                            menu_screen = 1
+                    elif menu_screen == 1:
+                        if pvp_starting_time[pvp_selected_option_1] == "Unlimited":  # If there is unlimited time, there is no need for time increments
+                            chess_game()
+                        else:
+                            menu_screen = 2
+                    elif menu_screen == 2:
                         chess_game()
                     elif menu_options[selected_option] == "Options":
                         print("Options selected")  # Implement options screen
                     elif menu_options[selected_option] == "Quit":
                         pygame.quit()
                         sys.exit()
-        draw_menu()
+        if menu_screen == 0:
+            draw_menu()
+        elif menu_screen == 1:
+            draw_pvp_menu_1()
+        elif menu_screen == 2:
+            draw_pvp_menu_2()
         clock.tick(60)
 
 
@@ -697,6 +747,14 @@ def chess_game():
         # rect = text.get_rect(midleft=(SCREEN_WIDTH // 2 + 80, SCREEN_HEIGHT // 2 - 190))
         # screen.blit(text, rect)
         pygame.draw.rect(screen, GRAY, (475, 100, SQUARE_SIZE * 5, SQUARE_SIZE * BOARD_SIZE))  # Gray rectangle
+        if pvp_starting_time[pvp_selected_option_1] == "Unlimited":
+            text = specialChar.render("Unlimited Time Chess", True, WHITE)
+        elif pvp_increment[pvp_selected_option_2] == "0":
+            text = specialChar.render(f"{pvp_starting_time[pvp_selected_option_1]} Minute Chess", True, WHITE)
+        else:
+            text = specialChar.render(f"{pvp_starting_time[pvp_selected_option_1]} | {pvp_increment[pvp_selected_option_2]} Chess", True, WHITE)
+        rect = text.get_rect(midleft=(SCREEN_WIDTH // 2 + 80, SCREEN_HEIGHT // 2 - 210))
+        screen.blit(text, rect)
         text = specialChar.render("Moves:", True, WHITE)
         rect = text.get_rect(midleft=(SCREEN_WIDTH // 2 + 95, SCREEN_HEIGHT // 2 - 175))
         screen.blit(text, rect)
