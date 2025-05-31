@@ -2,8 +2,8 @@ import pygame
 import sys
 import io
 import requests
-import random
 import math
+from datetime import datetime
 
 # Helpful website for settings: https://www.geeksforgeeks.org/create-settings-menu-in-python-pygame/
 
@@ -100,7 +100,14 @@ current_turn = 'white'
 selected_piece_pos = None
 possible_moves = []
 up = True  # True for normal, False for flipped
-
+epoch = datetime(2008, 6, 8, 3, 15, 8, 596137)
+game_start = None
+seconds_alive = None
+last_move_time = 0
+w_move_times = []
+b_move_times = []
+w_time = 999
+b_time = 314159265358979
 
 # --- Helper Functions ---
 
@@ -186,12 +193,9 @@ def get_pawn_moves(board, row, col, colour, up):
         dir = -1 if colour == 'w' else 1
     else:
         dir = 1 if colour == 'w' else -1
-    print(f"Pawn at ({row},{col}) of colour {colour}")
-    print(f"Moving in direction: {dir}")
     one_step = row + dir
     if is_on_board(one_step, col) and is_empty(board, one_step, col):
         moves.append((one_step, col))
-        print(colour)
         if colour == "white":
             starting_row = 6
         else:
@@ -320,7 +324,6 @@ def make_move(board, start_row, start_col, end_row, end_col, up):
     # Record move
     move_record = f"{piece}: {start_col}, {start_row} to {end_col}, {end_row}"
     moves.append(move_record)
-    print(move_record)
     # Chess Notation
     if current_turn == "white":  # Text characters are different and white's moves start with the move number
         if board[start_row][start_col][1] == "P":
@@ -504,7 +507,6 @@ def make_move(board, start_row, start_col, end_row, end_col, up):
                                     else:
                                         real_notation.append(f"{str(math.floor(len(moves) / 2) + 1)}. {letters[start_col]}x{letters[end_col]}1=♞")
                                 return
-    print(real_notation[-1])
     # Move the piece
     board[end_row][end_col] = piece
     board[start_row][start_col] = None
@@ -512,7 +514,25 @@ def make_move(board, start_row, start_col, end_row, end_col, up):
 
 def switch_turn():
     global current_turn
-    current_turn = 'black' if current_turn == 'white' else 'white'
+    global epoch
+    global seconds_alive
+    global last_move_time
+    global w_move_times
+    global b_move_times
+    global w_time
+    global b_time
+    if current_turn == "white":
+        w_move_times.append((datetime.now() - epoch).total_seconds() - last_move_time)
+        last_move_time = (datetime.now() - epoch).total_seconds()
+        w_time = w_time - w_move_times[-1] + int(pvp_increment[pvp_selected_option_2])
+        print(f"w: {w_time}")
+        current_turn = "black"
+    else:
+        b_move_times.append((datetime.now() - epoch).total_seconds() - last_move_time)
+        last_move_time = (datetime.now() - epoch).total_seconds()
+        b_time = b_time - b_move_times[-1] + int(pvp_increment[pvp_selected_option_2])
+        print(f"b: {b_time}")
+        current_turn = "white"
 
 
 # --- Coordinate Transformation Helpers ---
@@ -606,7 +626,7 @@ def draw_menu():
     pygame.display.flip()
 
 
-def draw_pvp_menu_1():  # TODO: Finish editing this
+def draw_pvp_menu_1():
     screen.fill(BLACK)
     for i, option in enumerate(pvp_starting_time):
         if i == pvp_selected_option_1:
@@ -693,10 +713,25 @@ def main():
             draw_pvp_menu_1()
         elif menu_screen == 2:
             draw_pvp_menu_2()
-        clock.tick(60)
+        clock.tick(60)  # Max FPS
 
 
 def chess_game():
+    global epoch
+    global game_start
+    global seconds_alive
+    global last_move_time
+    global w_move_times
+    global b_move_times
+    global w_time
+    global b_time
+    if not game_start:
+        game_start = datetime.now()  # In format 2025-05-31 10:04:28.449960
+        print(game_start)
+        seconds_alive = (game_start - epoch).total_seconds()  # Seconds between 0th birthday and game start (float)
+        print(seconds_alive)
+        last_move_time = seconds_alive
+        print(last_move_time)
     global up
     global SCREEN_HEIGHT
     global SCREEN_WIDTH
@@ -704,6 +739,12 @@ def chess_game():
     global possible_moves
     global menu_options
     global selected_option
+    if not pvp_starting_time[pvp_selected_option_1] == "Unlimited":
+        w_time = int(pvp_starting_time[pvp_selected_option_1]) * 60
+        b_time = int(pvp_starting_time[pvp_selected_option_1]) * 60
+    else:
+        w_time = 10 ** 100
+        b_time = 10 ** 100
     running = True
     while running:
         for event in pygame.event.get():
@@ -743,9 +784,6 @@ def chess_game():
         draw_pieces(board, up)
         draw_possible_moves(possible_moves, up)
         draw_selected_piece(selected_piece_pos, up)
-        # text = specialChar.render(f"Moves: {len(moves)}", True, WHITE)
-        # rect = text.get_rect(midleft=(SCREEN_WIDTH // 2 + 80, SCREEN_HEIGHT // 2 - 190))
-        # screen.blit(text, rect)
         pygame.draw.rect(screen, GRAY, (475, 100, SQUARE_SIZE * 5, SQUARE_SIZE * BOARD_SIZE))  # Gray rectangle
         if pvp_starting_time[pvp_selected_option_1] == "Unlimited":
             text = specialChar.render("Unlimited Time Chess", True, WHITE)
