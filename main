@@ -102,12 +102,12 @@ possible_moves = []
 up = True  # True for normal, False for flipped
 epoch = datetime(2008, 6, 8, 3, 15, 8, 596137)
 game_start = None
-seconds_alive = None
 last_move_time = 0
 w_move_times = []
 b_move_times = []
 w_time = 999
 b_time = 314159265358979
+
 
 # --- Helper Functions ---
 
@@ -515,7 +515,6 @@ def make_move(board, start_row, start_col, end_row, end_col, up):
 def switch_turn():
     global current_turn
     global epoch
-    global seconds_alive
     global last_move_time
     global w_move_times
     global b_move_times
@@ -535,7 +534,7 @@ def switch_turn():
         current_turn = "white"
 
 
-# --- Coordinate Transformation Helpers ---
+# --- Coordinate Functions ---
 
 def get_display_position(row, col, up):
     if up:
@@ -719,7 +718,6 @@ def main():
 def chess_game():
     global epoch
     global game_start
-    global seconds_alive
     global last_move_time
     global w_move_times
     global b_move_times
@@ -727,11 +725,7 @@ def chess_game():
     global b_time
     if not game_start:
         game_start = datetime.now()  # In format 2025-05-31 10:04:28.449960
-        print(game_start)
-        seconds_alive = (game_start - epoch).total_seconds()  # Seconds between 0th birthday and game start (float)
-        print(seconds_alive)
-        last_move_time = seconds_alive
-        print(last_move_time)
+        last_move_time = (game_start - epoch).total_seconds()  # Seconds between 0th birthday and game start (float)
     global up
     global SCREEN_HEIGHT
     global SCREEN_WIDTH
@@ -793,6 +787,19 @@ def chess_game():
             text = specialChar.render(f"{pvp_starting_time[pvp_selected_option_1]} | {pvp_increment[pvp_selected_option_2]} Chess", True, WHITE)
         rect = text.get_rect(midleft=(SCREEN_WIDTH // 2 + 80, SCREEN_HEIGHT // 2 - 210))
         screen.blit(text, rect)
+        if current_turn == "white":
+            w_live_time = w_time - ((datetime.now() - epoch).total_seconds() - last_move_time)
+            b_live_time = b_time
+        else:
+            b_live_time = b_time - ((datetime.now() - epoch).total_seconds() - last_move_time)
+            w_live_time = w_time
+        if not pvp_starting_time[pvp_selected_option_1] == "Unlimited":
+            text = font.render(f"{math.floor(w_live_time / 60)}:{round((w_live_time - math.floor(w_live_time / 60) * 60) * 10) / 10}", True, WHITE)
+            rect = text.get_rect(midleft=(25, SCREEN_HEIGHT // 2 + 225))
+            screen.blit(text, rect)
+            text = font.render(f"{math.floor(b_live_time / 60)}:{round((b_live_time - math.floor(b_live_time / 60) * 60) * 10) / 10}", True, WHITE)
+            rect = text.get_rect(midleft=(25, SCREEN_HEIGHT // 2 - 225))
+            screen.blit(text, rect)
         text = specialChar.render("Moves:", True, WHITE)
         rect = text.get_rect(midleft=(SCREEN_WIDTH // 2 + 95, SCREEN_HEIGHT // 2 - 175))
         screen.blit(text, rect)
