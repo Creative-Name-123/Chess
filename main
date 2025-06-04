@@ -5,6 +5,8 @@ import requests
 import math
 from datetime import datetime
 
+from tkinter import *
+
 # Helpful website for settings: https://www.geeksforgeeks.org/create-settings-menu-in-python-pygame/
 
 # Initialize Pygame
@@ -30,6 +32,8 @@ pvp_starting_time = ["Unlimited", "30", "15", "10", "5", "4", "3", "2", "1"]
 pvp_selected_option_1 = 0
 pvp_increment = ["15", "10", "5", "4", "3", "2", "1", "0"]
 pvp_selected_option_2 = 0
+settings_options = ["Load Image for Chess Pieces", "Back"]
+settings_selected_option = 0
 
 # Colours
 WHITE = (255, 255, 255)
@@ -84,18 +88,22 @@ piece_image_urls = {
 
 headers = {'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'}
 
-for piece, url in piece_image_urls.items():
-    try:
-        response = requests.get(url, headers=headers)
-        response.raise_for_status()
-        image_file = io.BytesIO(response.content)
-        image = pygame.image.load(image_file).convert_alpha()
-        piece_images[piece] = pygame.transform.scale(image, (SQUARE_SIZE, SQUARE_SIZE))
-    except requests.exceptions.RequestException as e:
-        print(f"Error downloading image from {url}: {e}")
-    except pygame.error as e:
-        print(f"Error loading image from URL {url}: {e}")
 
+def load_images():
+    for piece, url in piece_image_urls.items():
+        try:
+            response = requests.get(url, headers=headers)
+            response.raise_for_status()
+            image_file = io.BytesIO(response.content)
+            image = pygame.image.load(image_file).convert_alpha()
+            piece_images[piece] = pygame.transform.scale(image, (SQUARE_SIZE, SQUARE_SIZE))
+        except requests.exceptions.RequestException as e:
+            print(f"Error downloading image from {url}: {e}")
+        except pygame.error as e:
+            print(f"Error loading image from URL {url}: {e}")
+
+
+load_images()
 current_turn = 'white'
 selected_piece_pos = None
 possible_moves = []
@@ -260,9 +268,9 @@ def get_queen_moves(board, row, col, colour):
 
 def get_king_moves(board, row, col, colour):
     moves = []
-    for dr, dc in [(-1,-1), (-1,0), (-1,1),
-                   (0,-1),           (0,1),
-                   (1,-1),  (1,0),  (1,1)]:
+    for dr, dc in [(-1, -1), (-1, 0), (-1, 1),
+                   (0, -1),           (0, 1),
+                   (1, -1),  (1, 0),  (1, 1)]:
         r, c = row + dr, col + dc
         if is_on_board(r, c):
             if is_empty(board, r, c) or is_opponent(board, r, c, colour):
@@ -271,15 +279,15 @@ def get_king_moves(board, row, col, colour):
     if not has_moved('wK'):
         # White castling
         if not has_moved('wR') and all(board[7][i] is None for i in [5, 6]):
-            moves.append((7,6))
+            moves.append((7, 6))
         if not has_moved('wR') and all(board[7][i] is None for i in [1, 2, 3]):
-            moves.append((7,2))
+            moves.append((7, 2))
     if not has_moved('bK'):
         # Black castling
         if not has_moved('bR') and all(board[0][i] is None for i in [5, 6]):
-            moves.append((0,6))
+            moves.append((0, 6))
         if not has_moved('bR') and all(board[0][i] is None for i in [1, 2, 3]):
-            moves.append((0,2))
+            moves.append((0, 2))
     return moves
 
 
@@ -663,11 +671,28 @@ def draw_pvp_menu_2():
     pygame.display.flip()
 
 
+def draw_options_menu():
+    screen.fill(BLACK)
+    for i, option in enumerate(settings_options):
+        if i == settings_selected_option:
+            color = GRAY
+        else:
+            color = WHITE
+        text = font.render(option, True, color)
+        rect = text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 + i * 50))
+        screen.blit(text, rect)
+    text = bigFont.render("Chess", True, GREEN_HIGHLIGHT)
+    rect = text.get_rect(center=(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2 - 100))
+    screen.blit(text, rect)
+    pygame.display.flip()
+
+
 def main():
     menu_screen = 0
     global selected_option
     global pvp_selected_option_1
     global pvp_selected_option_2
+    global settings_selected_option
     clock = pygame.time.Clock()
     while True:
         for event in pygame.event.get():
@@ -682,6 +707,8 @@ def main():
                         pvp_selected_option_1 = (pvp_selected_option_1 - 1) % len(pvp_starting_time)
                     elif menu_screen == 2:
                         pvp_selected_option_2 = (pvp_selected_option_2 - 1) % len(pvp_starting_time)
+                    elif menu_screen == -1:
+                        settings_selected_option = (settings_selected_option - 1) % len(settings_options)
                 elif event.key == pygame.K_DOWN:
                     if menu_screen == 0:
                         selected_option = (selected_option + 1) % len(menu_options)
@@ -689,11 +716,18 @@ def main():
                         pvp_selected_option_1 = (pvp_selected_option_1 + 1) % len(pvp_starting_time)
                     elif menu_screen == 2:
                         pvp_selected_option_2 = (pvp_selected_option_2 + 1) % len(pvp_starting_time)
+                    elif menu_screen == -1:
+                        settings_selected_option = (settings_selected_option + 1) % len(settings_options)
                 elif event.key == pygame.K_RETURN:
                     # Menu selection
                     if menu_screen == 0:
                         if menu_options[selected_option].startswith("Player vs. "):
                             menu_screen = 1
+                        elif menu_options[selected_option] == "Options":
+                            menu_screen = -1
+                        elif menu_options[selected_option] == "Quit":
+                            pygame.quit()
+                            sys.exit()
                     elif menu_screen == 1:
                         if pvp_starting_time[pvp_selected_option_1] == "Unlimited":  # If there is unlimited time, there is no need for time increments
                             chess_game()
@@ -701,13 +735,23 @@ def main():
                             menu_screen = 2
                     elif menu_screen == 2:
                         chess_game()
-                    elif menu_options[selected_option] == "Options":
-                        print("Options selected")  # Implement options screen
-                    elif menu_options[selected_option] == "Quit":
-                        pygame.quit()
-                        sys.exit()
+                    elif menu_screen == -1:
+                        if settings_options[settings_selected_option] == "Back":
+                            menu_screen = 0
+                        elif settings_options[settings_selected_option] == "Load Image for Chess Pieces":
+                            root = Tk()
+                            root.geometry("300x450")
+                            root.title("Import Images")
+                            wp = Entry(root, width=20, bg="light yellow")
+                            wp.place(x=100, y=10)
+                            save_button = Button(root, text="Save", command=root.destroy)
+                            save_button.place(x=145, y=400)
+
+                            root.mainloop()
         if menu_screen == 0:
             draw_menu()
+        elif menu_screen == -1:
+            draw_options_menu()
         elif menu_screen == 1:
             draw_pvp_menu_1()
         elif menu_screen == 2:
@@ -794,10 +838,10 @@ def chess_game():
             b_live_time = b_time - ((datetime.now() - epoch).total_seconds() - last_move_time)
             w_live_time = w_time
         if not pvp_starting_time[pvp_selected_option_1] == "Unlimited":
-            text = font.render(f"{math.floor(w_live_time / 60)}:{round((w_live_time - math.floor(w_live_time / 60) * 60) * 10) / 10}", True, WHITE)
+            text = font.render(f"{math.floor(w_live_time / 60):02d}:{round((w_live_time - math.floor(w_live_time / 60) * 60) * 10) / 10:04.1f}", True, WHITE)
             rect = text.get_rect(midleft=(25, SCREEN_HEIGHT // 2 + 225))
             screen.blit(text, rect)
-            text = font.render(f"{math.floor(b_live_time / 60)}:{round((b_live_time - math.floor(b_live_time / 60) * 60) * 10) / 10}", True, WHITE)
+            text = font.render(f"{math.floor(b_live_time / 60):02d}:{round((b_live_time - math.floor(b_live_time / 60) * 60) * 10) / 10:04.1f}", True, WHITE)
             rect = text.get_rect(midleft=(25, SCREEN_HEIGHT // 2 - 225))
             screen.blit(text, rect)
         text = specialChar.render("Moves:", True, WHITE)
