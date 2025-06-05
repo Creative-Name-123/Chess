@@ -4,10 +4,12 @@ import io
 import requests
 import math
 from datetime import datetime
-
 from tkinter import *
+from stockfish import Stockfish
 
-# Helpful website for settings: https://www.geeksforgeeks.org/create-settings-menu-in-python-pygame/
+stockfish = Stockfish(path="/Users/evanside/Downloads/stockfish-windows-x86-64-avx2/stockfish/scripts")
+stockfish.get_parameters()
+stockfish.set_skill_level(1)
 
 # Initialize Pygame
 pygame.init()
@@ -26,7 +28,7 @@ bigFont = pygame.font.SysFont(None, 100)
 specialChar = pygame.font.SysFont("segoeuisymbol", 15)  # This font is needed to show chess pieces
 
 # Menu Options
-menu_options = ["Player vs. Player (offline)", "Player vs. Player (online)", "Options", "Quit"]
+menu_options = ["Player vs. Player (offline)", "Player vs. AI", "Options", "Quit"]
 selected_option = 0
 pvp_starting_time = ["Unlimited", "30", "15", "10", "5", "4", "3", "2", "1"]
 pvp_selected_option_1 = 0
@@ -57,8 +59,7 @@ initial_board = [
     [None, None, None, None, None, None, None, None],
     [None, None, None, None, None, None, None, None],
     ['wP', 'wP', 'wP', 'wP', 'wP', 'wP', 'wP', 'wP'],
-    ['wR', 'wN', 'wB', 'wQ', 'wK', 'wB', 'wN', 'wR']
-]
+    ['wR', 'wN', 'wB', 'wQ', 'wK', 'wB', 'wN', 'wR']]
 
 moves = []
 real_notation = []
