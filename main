@@ -7,8 +7,6 @@ from datetime import datetime
 from tkinter import *
 import random
 
-from chess.svg import piece
-
 # Initialize Pygame
 pygame.init()
 
@@ -114,6 +112,18 @@ w_move_times = []
 b_move_times = []
 w_time = 999
 b_time = 314159265358979
+new_br = "a"
+new_bn = "b"
+new_bb = "c"
+new_bq = "d"
+new_bk = "e"
+new_bp = "f"
+new_wr = "g"
+new_wn = "h"
+new_wb = ""
+new_wq = ""
+new_wk = ""
+new_wp = ""
 
 
 # --- Helper Functions ---
@@ -742,7 +752,7 @@ def main():
                         elif settings_options[settings_selected_option] == "Load Image for Chess Pieces":
                             root = Tk()
                             root.geometry("300x450")
-                            root.title("Import Images")
+                            root.title("Import Images (must be .png or .jpg)")
                             wp_text = Label(root, text="White Pawn:")
                             wp_text.place(x=30, y=10)
                             wp = Entry(root, width=20, bg="light yellow")
@@ -791,23 +801,52 @@ def main():
                             bk_text.place(x=30, y=250)
                             bk = Entry(root, width=20, bg="light yellow")
                             bk.place(x=110, y=250)
-                            save_button = Button(root, text="Save", command=root.destroy)
+
+                            def close():
+                                global new_br
+                                global new_bn
+                                global new_bb
+                                global new_bq
+                                global new_bk
+                                global new_bp
+                                global new_wr
+                                global new_wn
+                                global new_wb
+                                global new_wq
+                                global new_wk
+                                global new_wp
+                                new_br = br.get()
+                                new_bn = bn.get()
+                                new_bb = bb.get()
+                                new_bq = bq.get()
+                                new_bk = bk.get()
+                                new_bp = bp.get()
+                                new_wr = wr.get()
+                                new_wn = wn.get()
+                                new_wb = wb.get()
+                                new_wq = wq.get()
+                                new_wk = wk.get()
+                                new_wp = wp.get()
+                                root.destroy()
+
+                            save_button = Button(root, text="Save", command=close)
                             save_button.place(x=145, y=400)
+
                             root.mainloop()
-                            new_br = br.get()
-                            new_bn = bn.get()
-                            new_bb = bb.get()
-                            new_bq = bq.get()
-                            new_bk = bk.get()
-                            new_bp = bp.get()
-                            new_wr = wr.get()
-                            new_wn = wn.get()
-                            new_wb = wb.get()
-                            new_wq = wq.get()
-                            new_wk = wk.get()
-                            new_wp = wp.get()
                             # Update images
                             global piece_image_urls
+                            global new_br
+                            global new_bn
+                            global new_bb
+                            global new_bq
+                            global new_bk
+                            global new_bp
+                            global new_wr
+                            global new_wn
+                            global new_wb
+                            global new_wq
+                            global new_wk
+                            global new_wp
                             if len(new_br) > 0:
                                 try:
                                     response = requests.get(new_br, headers=headers)
@@ -815,7 +854,7 @@ def main():
                                     image_file = io.BytesIO(response.content)
                                     image = pygame.image.load(image_file).convert_alpha()
                                     piece_images['bR'] = pygame.transform.scale(image, (SQUARE_SIZE, SQUARE_SIZE))
-                                except():
+                                except Exception as e:
                                     print("Error with the black rook image")
                                 else:
                                     piece_image_urls['bR'] = br
@@ -826,7 +865,7 @@ def main():
                                     image_file = io.BytesIO(response.content)
                                     image = pygame.image.load(image_file).convert_alpha()
                                     piece_images['bN'] = pygame.transform.scale(image, (SQUARE_SIZE, SQUARE_SIZE))
-                                except():
+                                except Exception as e:
                                     print("Error with the black knight image")
                                 else:
                                     piece_image_urls['bN'] = bn
@@ -837,7 +876,7 @@ def main():
                                     image_file = io.BytesIO(response.content)
                                     image = pygame.image.load(image_file).convert_alpha()
                                     piece_images['bB'] = pygame.transform.scale(image, (SQUARE_SIZE, SQUARE_SIZE))
-                                except():
+                                except Exception as e:
                                     print("Error with the black bishop image")
                                 else:
                                     piece_image_urls['bB'] = bb
@@ -848,7 +887,7 @@ def main():
                                     image_file = io.BytesIO(response.content)
                                     image = pygame.image.load(image_file).convert_alpha()
                                     piece_images['bQ'] = pygame.transform.scale(image, (SQUARE_SIZE, SQUARE_SIZE))
-                                except():
+                                except Exception as e:
                                     print("Error with the black queen image")
                                 else:
                                     piece_image_urls['bQ'] = bq
@@ -859,7 +898,7 @@ def main():
                                     image_file = io.BytesIO(response.content)
                                     image = pygame.image.load(image_file).convert_alpha()
                                     piece_images['bK'] = pygame.transform.scale(image, (SQUARE_SIZE, SQUARE_SIZE))
-                                except():
+                                except Exception as e:
                                     print("Error with the black king image")
                                 else:
                                     piece_image_urls['bK'] = bk
@@ -870,7 +909,7 @@ def main():
                                     image_file = io.BytesIO(response.content)
                                     image = pygame.image.load(image_file).convert_alpha()
                                     piece_images['bP'] = pygame.transform.scale(image, (SQUARE_SIZE, SQUARE_SIZE))
-                                except():
+                                except Exception as e:
                                     print("Error with the black pawn image")
                                 else:
                                     piece_image_urls['bP'] = bp
@@ -881,7 +920,7 @@ def main():
                                     image_file = io.BytesIO(response.content)
                                     image = pygame.image.load(image_file).convert_alpha()
                                     piece_images['wR'] = pygame.transform.scale(image, (SQUARE_SIZE, SQUARE_SIZE))
-                                except():
+                                except Exception as e:
                                     print("Error with the white rook image")
                                 else:
                                     piece_image_urls['wR'] = wr
@@ -892,7 +931,7 @@ def main():
                                     image_file = io.BytesIO(response.content)
                                     image = pygame.image.load(image_file).convert_alpha()
                                     piece_images['wN'] = pygame.transform.scale(image, (SQUARE_SIZE, SQUARE_SIZE))
-                                except():
+                                except Exception as e:
                                     print("Error with the white knight image")
                                 else:
                                     piece_image_urls['wN'] = wn
@@ -903,7 +942,7 @@ def main():
                                     image_file = io.BytesIO(response.content)
                                     image = pygame.image.load(image_file).convert_alpha()
                                     piece_images['wB'] = pygame.transform.scale(image, (SQUARE_SIZE, SQUARE_SIZE))
-                                except():
+                                except Exception as e:
                                     print("Error with the white bishop image")
                                 else:
                                     piece_image_urls['wB'] = wb
@@ -914,7 +953,7 @@ def main():
                                     image_file = io.BytesIO(response.content)
                                     image = pygame.image.load(image_file).convert_alpha()
                                     piece_images['wQ'] = pygame.transform.scale(image, (SQUARE_SIZE, SQUARE_SIZE))
-                                except():
+                                except Exception as e:
                                     print("Error with the white queen image")
                                 else:
                                     piece_image_urls['wQ'] = wq
@@ -925,7 +964,7 @@ def main():
                                     image_file = io.BytesIO(response.content)
                                     image = pygame.image.load(image_file).convert_alpha()
                                     piece_images['wK'] = pygame.transform.scale(image, (SQUARE_SIZE, SQUARE_SIZE))
-                                except():
+                                except Exception as e:
                                     print("Error with the white king image")
                                 else:
                                     piece_image_urls['wK'] = wk
@@ -936,12 +975,14 @@ def main():
                                     image_file = io.BytesIO(response.content)
                                     image = pygame.image.load(image_file).convert_alpha()
                                     piece_images['wP'] = pygame.transform.scale(image, (SQUARE_SIZE, SQUARE_SIZE))
-                                except():
+                                except Exception as e:
                                     print("Error with the white pawn image")
                                 else:
                                     print("this code runs")
                                     print(new_wr)
                                     piece_image_urls['wP'] = new_wp
+                            else:
+                                print("bad code")
                             load_images()
         if menu_screen == 0:
             draw_menu()
