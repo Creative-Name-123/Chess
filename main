@@ -5,11 +5,9 @@ import requests
 import math
 from datetime import datetime
 from tkinter import *
-from stockfish import Stockfish
+import random
 
-stockfish = Stockfish(path="/Users/evanside/Downloads/stockfish-windows-x86-64-avx2/stockfish/scripts")
-stockfish.get_parameters()
-stockfish.set_skill_level(1)
+from chess.svg import piece
 
 # Initialize Pygame
 pygame.init()
@@ -276,7 +274,7 @@ def get_king_moves(board, row, col, colour):
         if is_on_board(r, c):
             if is_empty(board, r, c) or is_opponent(board, r, c, colour):
                 moves.append((r, c))
-    # Castling (simplified, no check for check or moved rook)
+    # Castling
     if not has_moved('wK'):
         # White castling
         if not has_moved('wR') and all(board[7][i] is None for i in [5, 6]):
@@ -722,8 +720,10 @@ def main():
                 elif event.key == pygame.K_RETURN:
                     # Menu selection
                     if menu_screen == 0:
-                        if menu_options[selected_option].startswith("Player vs. "):
+                        if menu_options[selected_option].startswith("Player vs. Player"):
                             menu_screen = 1
+                        elif menu_options[selected_option] == "Player vs. AI":
+                            chess_game()
                         elif menu_options[selected_option] == "Options":
                             menu_screen = -1
                         elif menu_options[selected_option] == "Quit":
@@ -743,12 +743,206 @@ def main():
                             root = Tk()
                             root.geometry("300x450")
                             root.title("Import Images")
+                            wp_text = Label(root, text="White Pawn:")
+                            wp_text.place(x=30, y=10)
                             wp = Entry(root, width=20, bg="light yellow")
-                            wp.place(x=100, y=10)
+                            wp.place(x=110, y=10)
+                            wr_text = Label(root, text="White Rook:")
+                            wr_text.place(x=30, y=30)
+                            wr = Entry(root, width=20, bg="light yellow")
+                            wr.place(x=110, y=30)
+                            wn_text = Label(root, text="White Knight:")
+                            wn_text.place(x=30, y=50)
+                            wn = Entry(root, width=20, bg="light yellow")
+                            wn.place(x=110, y=50)
+                            wb_text = Label(root, text="White Bishop:")
+                            wb_text.place(x=30, y=70)
+                            wb = Entry(root, width=20, bg="light yellow")
+                            wb.place(x=110, y=70)
+                            wq_text = Label(root, text="White Queen:")
+                            wq_text.place(x=30, y=90)
+                            wq = Entry(root, width=20, bg="light yellow")
+                            wq.place(x=110, y=90)
+                            wk_text = Label(root, text="White King:")
+                            wk_text.place(x=30, y=110)
+                            wk = Entry(root, width=20, bg="light yellow")
+                            wk.place(x=110, y=110)
+                            bp_text = Label(root, text="Black Pawn:")
+                            bp_text.place(x=30, y=150)
+                            bp = Entry(root, width=20, bg="light yellow")
+                            bp.place(x=110, y=150)
+                            br_text = Label(root, text="Black Rook:")
+                            br_text.place(x=30, y=170)
+                            br = Entry(root, width=20, bg="light yellow")
+                            br.place(x=110, y=170)
+                            bn_text = Label(root, text="Black Knight:")
+                            bn_text.place(x=30, y=190)
+                            bn = Entry(root, width=20, bg="light yellow")
+                            bn.place(x=110, y=190)
+                            bb_text = Label(root, text="Black Bishop:")
+                            bb_text.place(x=30, y=210)
+                            bb = Entry(root, width=20, bg="light yellow")
+                            bb.place(x=110, y=210)
+                            bq_text = Label(root, text="Black Queen:")
+                            bq_text.place(x=30, y=230)
+                            bq = Entry(root, width=20, bg="light yellow")
+                            bq.place(x=110, y=230)
+                            bk_text = Label(root, text="Black King:")
+                            bk_text.place(x=30, y=250)
+                            bk = Entry(root, width=20, bg="light yellow")
+                            bk.place(x=110, y=250)
                             save_button = Button(root, text="Save", command=root.destroy)
                             save_button.place(x=145, y=400)
-
                             root.mainloop()
+                            new_br = br.get()
+                            new_bn = bn.get()
+                            new_bb = bb.get()
+                            new_bq = bq.get()
+                            new_bk = bk.get()
+                            new_bp = bp.get()
+                            new_wr = wr.get()
+                            new_wn = wn.get()
+                            new_wb = wb.get()
+                            new_wq = wq.get()
+                            new_wk = wk.get()
+                            new_wp = wp.get()
+                            # Update images
+                            global piece_image_urls
+                            if len(new_br) > 0:
+                                try:
+                                    response = requests.get(new_br, headers=headers)
+                                    response.raise_for_status()
+                                    image_file = io.BytesIO(response.content)
+                                    image = pygame.image.load(image_file).convert_alpha()
+                                    piece_images['bR'] = pygame.transform.scale(image, (SQUARE_SIZE, SQUARE_SIZE))
+                                except():
+                                    print("Error with the black rook image")
+                                else:
+                                    piece_image_urls['bR'] = br
+                            if len(new_bn) > 0:
+                                try:
+                                    response = requests.get(new_bn, headers=headers)
+                                    response.raise_for_status()
+                                    image_file = io.BytesIO(response.content)
+                                    image = pygame.image.load(image_file).convert_alpha()
+                                    piece_images['bN'] = pygame.transform.scale(image, (SQUARE_SIZE, SQUARE_SIZE))
+                                except():
+                                    print("Error with the black knight image")
+                                else:
+                                    piece_image_urls['bN'] = bn
+                            if len(new_bb) > 0:
+                                try:
+                                    response = requests.get(new_bb, headers=headers)
+                                    response.raise_for_status()
+                                    image_file = io.BytesIO(response.content)
+                                    image = pygame.image.load(image_file).convert_alpha()
+                                    piece_images['bB'] = pygame.transform.scale(image, (SQUARE_SIZE, SQUARE_SIZE))
+                                except():
+                                    print("Error with the black bishop image")
+                                else:
+                                    piece_image_urls['bB'] = bb
+                            if len(new_bq) > 0:
+                                try:
+                                    response = requests.get(new_bq, headers=headers)
+                                    response.raise_for_status()
+                                    image_file = io.BytesIO(response.content)
+                                    image = pygame.image.load(image_file).convert_alpha()
+                                    piece_images['bQ'] = pygame.transform.scale(image, (SQUARE_SIZE, SQUARE_SIZE))
+                                except():
+                                    print("Error with the black queen image")
+                                else:
+                                    piece_image_urls['bQ'] = bq
+                            if len(new_bk) > 0:
+                                try:
+                                    response = requests.get(new_bk, headers=headers)
+                                    response.raise_for_status()
+                                    image_file = io.BytesIO(response.content)
+                                    image = pygame.image.load(image_file).convert_alpha()
+                                    piece_images['bK'] = pygame.transform.scale(image, (SQUARE_SIZE, SQUARE_SIZE))
+                                except():
+                                    print("Error with the black king image")
+                                else:
+                                    piece_image_urls['bK'] = bk
+                            if len(new_bp) > 0:
+                                try:
+                                    response = requests.get(new_bp, headers=headers)
+                                    response.raise_for_status()
+                                    image_file = io.BytesIO(response.content)
+                                    image = pygame.image.load(image_file).convert_alpha()
+                                    piece_images['bP'] = pygame.transform.scale(image, (SQUARE_SIZE, SQUARE_SIZE))
+                                except():
+                                    print("Error with the black pawn image")
+                                else:
+                                    piece_image_urls['bP'] = bp
+                            if len(new_wr) > 0:
+                                try:
+                                    response = requests.get(new_wr, headers=headers)
+                                    response.raise_for_status()
+                                    image_file = io.BytesIO(response.content)
+                                    image = pygame.image.load(image_file).convert_alpha()
+                                    piece_images['wR'] = pygame.transform.scale(image, (SQUARE_SIZE, SQUARE_SIZE))
+                                except():
+                                    print("Error with the white rook image")
+                                else:
+                                    piece_image_urls['wR'] = wr
+                            if len(new_wn) > 0:
+                                try:
+                                    response = requests.get(new_wn, headers=headers)
+                                    response.raise_for_status()
+                                    image_file = io.BytesIO(response.content)
+                                    image = pygame.image.load(image_file).convert_alpha()
+                                    piece_images['wN'] = pygame.transform.scale(image, (SQUARE_SIZE, SQUARE_SIZE))
+                                except():
+                                    print("Error with the white knight image")
+                                else:
+                                    piece_image_urls['wN'] = wn
+                            if len(new_wb) > 0:
+                                try:
+                                    response = requests.get(new_wb, headers=headers)
+                                    response.raise_for_status()
+                                    image_file = io.BytesIO(response.content)
+                                    image = pygame.image.load(image_file).convert_alpha()
+                                    piece_images['wB'] = pygame.transform.scale(image, (SQUARE_SIZE, SQUARE_SIZE))
+                                except():
+                                    print("Error with the white bishop image")
+                                else:
+                                    piece_image_urls['wB'] = wb
+                            if len(new_wq) > 0:
+                                try:
+                                    response = requests.get(new_wq, headers=headers)
+                                    response.raise_for_status()
+                                    image_file = io.BytesIO(response.content)
+                                    image = pygame.image.load(image_file).convert_alpha()
+                                    piece_images['wQ'] = pygame.transform.scale(image, (SQUARE_SIZE, SQUARE_SIZE))
+                                except():
+                                    print("Error with the white queen image")
+                                else:
+                                    piece_image_urls['wQ'] = wq
+                            if len(new_wk) > 0:
+                                try:
+                                    response = requests.get(new_wk, headers=headers)
+                                    response.raise_for_status()
+                                    image_file = io.BytesIO(response.content)
+                                    image = pygame.image.load(image_file).convert_alpha()
+                                    piece_images['wK'] = pygame.transform.scale(image, (SQUARE_SIZE, SQUARE_SIZE))
+                                except():
+                                    print("Error with the white king image")
+                                else:
+                                    piece_image_urls['wK'] = wk
+                            if len(new_wp) > 0:
+                                try:
+                                    response = requests.get(new_wp, headers=headers)
+                                    response.raise_for_status()
+                                    image_file = io.BytesIO(response.content)
+                                    image = pygame.image.load(image_file).convert_alpha()
+                                    piece_images['wP'] = pygame.transform.scale(image, (SQUARE_SIZE, SQUARE_SIZE))
+                                except():
+                                    print("Error with the white pawn image")
+                                else:
+                                    print("this code runs")
+                                    print(new_wr)
+                                    piece_image_urls['wP'] = new_wp
+                            load_images()
         if menu_screen == 0:
             draw_menu()
         elif menu_screen == -1:
