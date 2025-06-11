@@ -5,7 +5,6 @@ import requests
 import math
 from datetime import datetime
 from tkinter import *
-import random
 
 # Initialize Pygame
 pygame.init()
@@ -30,7 +29,7 @@ pvp_starting_time = ["Unlimited", "30", "15", "10", "5", "4", "3", "2", "1"]
 pvp_selected_option_1 = 0
 pvp_increment = ["15", "10", "5", "4", "3", "2", "1", "0"]
 pvp_selected_option_2 = 0
-settings_options = ["Load Image for Chess Pieces", "Back"]
+settings_options = ["Load Images for Chess Pieces", "Back"]
 settings_selected_option = 0
 
 # Colours
@@ -161,23 +160,28 @@ def has_moved(piece_code, start_col=None):
 
 
 def is_square_attacked(board, row, col, by_colour):
+    print(f"enemy: {by_colour}")
     enemy = by_colour
     directions = [(-1, -1), (-1, 0), (-1, 1),
                   (0, -1),          (0, 1),
                   (1, -1), (1, 0),  (1, 1)]
     # Pawn attacks
-    direction = -1 if enemy == 'w' else 1
+    direction = 1 if enemy == 'w' else -1
     for dc in [-1, 1]:
         r, c = row + direction, col + dc
-        if is_on_board(r, c) and board[r][c] == enemy + 'P':
-            return True
+        if is_on_board(r, c):
+            if board[r][c] == enemy + 'P':
+                print("pawn attack")
+                return True
     # Knight attacks
     knight_moves = [(2, 1), (1, 2), (-1, 2), (-2, 1),
                     (-2, -1), (-1, -2), (1, -2), (2, -1)]
     for dr, dc in knight_moves:
         r, c = row + dr, col + dc
-        if is_on_board(r, c) and board[r][c] == enemy + 'N':
-            return True
+        if is_on_board(r, c):
+            if board[r][c] == enemy + 'N':
+                print("knight attack")
+                return True
     # Sliding pieces
     for dr, dc in directions:
         for i in range(1, 8):
@@ -189,15 +193,20 @@ def is_square_attacked(board, row, col, by_colour):
                 if piece[0] == enemy:
                     p_type = piece[1]
                     if (dr == 0 or dc == 0) and p_type in ('R', 'Q'):
+                        print("rook or queen attack")
                         return True
                     elif (dr != 0 and dc != 0) and p_type in ('B', 'Q'):
+                        print("rook or queen attack")
                         return True
-                break
-    # King
+                break  # Blocked by a piece
+    # King attacks
     for dr, dc in directions:
         r, c = row + dr, col + dc
-        if is_on_board(r, c) and board[r][c] == enemy + 'K':
-            return True
+        if is_on_board(r, c):
+            if board[r][c] == enemy + 'K':
+                print("king attack")
+                return True
+    print("is_square_attacked() returns False")
     return False
 
 
@@ -229,7 +238,7 @@ def get_pawn_moves(board, row, col, colour, up):
 
 def get_rook_moves(board, row, col, colour):
     moves = []
-    for dr, dc in [(0,1),(0,-1),(1,0),(-1,0)]:
+    for dr, dc in [(0, 1), (0, -1), (1, 0), (-1, 0)]:
         r, c = row + dr, col + dc
         while is_on_board(r, c):
             if is_empty(board, r, c):
@@ -324,8 +333,47 @@ def get_all_possible_moves(board, row, col):
     return []
 
 
+def is_in_check(board, colour):
+    # Find the king's position
+    king_row, king_col = None, None
+    for r in range(8):
+        for c in range(8):
+            piece = board[r][c]
+            if piece == colour[0] + 'K':
+                king_row, king_col = r, c
+                break
+        if king_row is not None:
+            break
+    if king_row is None:
+        # King not found -- should not happen in a valid game
+        print("no king?")
+        return False
+    # Check if the king's position is attacked by opponent
+    opponent_colour = 'w' if colour == 'w' else 'b'
+    print(f"is_in_check() returns {is_square_attacked(board, king_row, king_col, opponent_colour)}")
+    return is_square_attacked(board, king_row, king_col, opponent_colour)
+
+
 def is_valid_move(board, start_row, start_col, end_row, end_col):
-    return (end_row, end_col) in get_all_possible_moves(board, start_row, start_col)
+    possible_moves = get_all_possible_moves(board, start_row, start_col)
+    if (end_row, end_col) not in possible_moves:
+        return False
+
+    # Simulate move
+    temp_board = [row[:] for row in board]
+    moving_piece = temp_board[start_row][start_col]
+    temp_board[end_row][end_col] = moving_piece
+    temp_board[start_row][start_col] = None
+
+    current_colour = get_piece_colour(moving_piece)
+    in_check = is_in_check(temp_board, current_colour)
+
+    if in_check:
+        print("Move leaves king in check. Invalid.")
+        return False
+
+    print("Move is valid.")
+    return True
 
 
 # Chess notation is in this function
@@ -541,13 +589,11 @@ def switch_turn():
         w_move_times.append((datetime.now() - epoch).total_seconds() - last_move_time)
         last_move_time = (datetime.now() - epoch).total_seconds()
         w_time = w_time - w_move_times[-1] + int(pvp_increment[pvp_selected_option_2])
-        print(f"w: {w_time}")
         current_turn = "black"
     else:
         b_move_times.append((datetime.now() - epoch).total_seconds() - last_move_time)
         last_move_time = (datetime.now() - epoch).total_seconds()
         b_time = b_time - b_move_times[-1] + int(pvp_increment[pvp_selected_option_2])
-        print(f"b: {b_time}")
         current_turn = "white"
 
 
@@ -749,10 +795,10 @@ def main():
                     elif menu_screen == -1:
                         if settings_options[settings_selected_option] == "Back":
                             menu_screen = 0
-                        elif settings_options[settings_selected_option] == "Load Image for Chess Pieces":
+                        elif settings_options[settings_selected_option] == "Load Images for Chess Pieces":
                             root = Tk()
                             root.geometry("300x450")
-                            root.title("Import Images (must be .png or .jpg)")
+                            root.title("Import Images")
                             wp_text = Label(root, text="White Pawn:")
                             wp_text.place(x=30, y=10)
                             wp = Entry(root, width=20, bg="light yellow")
@@ -801,6 +847,10 @@ def main():
                             bk_text.place(x=30, y=250)
                             bk = Entry(root, width=20, bg="light yellow")
                             bk.place(x=110, y=250)
+                            info1 = Label(root, text="Pictures must be .jpg or .png and might")
+                            info1.place(x=40, y=300)
+                            info2 = Label(root, text="have to be from the Wikimedia website")
+                            info2.place(x=40, y=320)
 
                             def close():
                                 global new_br
@@ -978,11 +1028,7 @@ def main():
                                 except Exception as e:
                                     print("Error with the white pawn image")
                                 else:
-                                    print("this code runs")
-                                    print(new_wr)
                                     piece_image_urls['wP'] = new_wp
-                            else:
-                                print("bad code")
                             load_images()
         if menu_screen == 0:
             draw_menu()
@@ -1049,6 +1095,8 @@ def chess_game():
                         if is_valid_move(board, start_row, start_col, end_row, end_col):
                             make_move(board, start_row, start_col, end_row, end_col, up)
                             switch_turn()
+                        else:
+                            print("no")
                         # Deselect after move attempt
                         selected_piece_pos = None
                         possible_moves = []
