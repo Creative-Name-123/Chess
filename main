@@ -1107,8 +1107,6 @@ def chess_game():
                         if is_valid_move(board, start_row, start_col, end_row, end_col):
                             make_move(board, start_row, start_col, end_row, end_col, up)
                             switch_turn()
-                        else:
-                            print("no")
                         # Deselect after move attempt
                         selected_piece_pos = None
                         possible_moves = []
@@ -1133,6 +1131,16 @@ def chess_game():
         else:
             b_live_time = b_time - ((datetime.now() - epoch).total_seconds() - last_move_time)
             w_live_time = w_time
+        if w_live_time <= 0:
+            text = font.render("Black wins on time", True, WHITE)
+            rect = text.get_rect(midleft=(SCREEN_WIDTH // 2 - 95, SCREEN_HEIGHT // 2 - 250))
+            screen.blit(text, rect)
+            w_live_time = 0
+        if b_live_time <= 0:
+            text = font.render("White wins on time", True, WHITE)
+            rect = text.get_rect(midleft=(SCREEN_WIDTH // 2 - 95, SCREEN_HEIGHT // 2 - 250))
+            screen.blit(text, rect)
+            b_live_time = 0
         if not pvp_starting_time[pvp_selected_option_1] == "Unlimited":
             text = font.render(f"{math.floor(w_live_time / 60):02d}:{round((w_live_time - math.floor(w_live_time / 60) * 60) * 10) / 10:04.1f}", True, WHITE)
             rect = text.get_rect(midleft=(25, SCREEN_HEIGHT // 2 + 225))
