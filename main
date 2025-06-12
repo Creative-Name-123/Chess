@@ -58,6 +58,7 @@ initial_board = [
 
 moves = []
 real_notation = []
+move_record = ""
 
 letters = ["a", "b", "c", "d", "e", "f", "g", "h"]
 numbers = ["1", "2", "3", "4", "5", "6", "7", "8"]
@@ -119,10 +120,11 @@ new_bk = "e"
 new_bp = "f"
 new_wr = "g"
 new_wn = "h"
-new_wb = ""
+new_wb = "variable"
 new_wq = ""
 new_wk = ""
 new_wp = ""
+en_passant = False
 
 
 # --- Helper Functions ---
@@ -160,7 +162,6 @@ def has_moved(piece_code, start_col=None):
 
 
 def is_square_attacked(board, row, col, by_colour):
-    print(f"enemy: {by_colour}")
     enemy = by_colour
     directions = [(-1, -1), (-1, 0), (-1, 1),
                   (0, -1),          (0, 1),
@@ -171,7 +172,6 @@ def is_square_attacked(board, row, col, by_colour):
         r, c = row + direction, col + dc
         if is_on_board(r, c):
             if board[r][c] == enemy + 'P':
-                print("pawn attack")
                 return True
     # Knight attacks
     knight_moves = [(2, 1), (1, 2), (-1, 2), (-2, 1),
@@ -180,7 +180,6 @@ def is_square_attacked(board, row, col, by_colour):
         r, c = row + dr, col + dc
         if is_on_board(r, c):
             if board[r][c] == enemy + 'N':
-                print("knight attack")
                 return True
     # Sliding pieces
     for dr, dc in directions:
@@ -193,10 +192,8 @@ def is_square_attacked(board, row, col, by_colour):
                 if piece[0] == enemy:
                     p_type = piece[1]
                     if (dr == 0 or dc == 0) and p_type in ('R', 'Q'):
-                        print("rook or queen attack")
                         return True
                     elif (dr != 0 and dc != 0) and p_type in ('B', 'Q'):
-                        print("rook or queen attack")
                         return True
                 break  # Blocked by a piece
     # King attacks
@@ -204,9 +201,7 @@ def is_square_attacked(board, row, col, by_colour):
         r, c = row + dr, col + dc
         if is_on_board(r, c):
             if board[r][c] == enemy + 'K':
-                print("king attack")
                 return True
-    print("is_square_attacked() returns False")
     return False
 
 
@@ -233,6 +228,15 @@ def get_pawn_moves(board, row, col, colour, up):
         r, c = row + dir, col + dc
         if is_on_board(r, c) and is_opponent(board, r, c, colour):
             moves.append((r, c))
+            global move_record
+            print(move_record)
+            print(f"EP check: {colour[0]}P: {row}, {c + dir * 2} to {row}, {c}")
+        if board[row][c]:  # Checks if this tile has a piece on it
+            o = "b" if colour == "white" else "w"
+            if board[row][c][1] == "P" and is_opponent(board, row, c, colour) and move_record == f"{o}P: {row}, {c + dir * 2} to {row}, {c}":  # Check for En Passant
+                moves.append((r, c))
+                global en_passant
+                en_passant = True
     return moves
 
 
@@ -349,8 +353,7 @@ def is_in_check(board, colour):
         print("no king?")
         return False
     # Check if the king's position is attacked by opponent
-    opponent_colour = 'w' if colour == 'w' else 'b'
-    print(f"is_in_check() returns {is_square_attacked(board, king_row, king_col, opponent_colour)}")
+    opponent_colour = 'w' if colour == 'black' else 'b'
     return is_square_attacked(board, king_row, king_col, opponent_colour)
 
 
@@ -369,10 +372,7 @@ def is_valid_move(board, start_row, start_col, end_row, end_col):
     in_check = is_in_check(temp_board, current_colour)
 
     if in_check:
-        print("Move leaves king in check. Invalid.")
         return False
-
-    print("Move is valid.")
     return True
 
 
@@ -384,19 +384,27 @@ def make_move(board, start_row, start_col, end_row, end_col, up):
         start_row, start_col = 7 - start_row, 7 - start_col
         end_row, end_col = 7 - end_row, 7 - end_col
     piece = board[start_row][start_col]
+    global en_passant
+    if en_passant:
+        if current_turn == "white":
+            board[end_row + 1][end_col] = None
+        else:
+            board[end_row - 1][end_col] = None
     if not piece:
         return
     # Record move
+    global move_record
     move_record = f"{piece}: {start_col}, {start_row} to {end_col}, {end_row}"
     moves.append(move_record)
     # Chess Notation
     if current_turn == "white":  # Text characters are different and white's moves start with the move number
         if board[start_row][start_col][1] == "P":
             if not end_row == 0:  # If not pawn promotion
-                if board[end_row][end_col] is None:  # If this isn't a capture
+                if board[end_row][end_col] is None and not en_passant:  # If this isn't a capture
                     real_notation.append(str(math.floor(len(moves) / 2) + 1) + ". " + letters[end_col] + numbers[7 - end_row])
                 else:
                     real_notation.append(f"{str(math.floor(len(moves) / 2) + 1)}. {letters[start_col]}x{letters[end_col]}{numbers[7 - end_row]}")
+                    en_passant = False
         elif board[start_row][start_col][1] == "R":
             if board[end_row][end_col] is None:
                 real_notation.append(str(math.floor(len(moves) / 2) + 1) + ". ♖" + letters[end_col] + numbers[7 - end_row])
@@ -652,13 +660,17 @@ def draw_pieces(board, up):
 
 
 def draw_possible_moves(possible_moves, up):
-    for row, col in possible_moves:
-        display_row, display_col = get_display_position(row, col, up)
-        x = display_col * SQUARE_SIZE
-        y = display_row * SQUARE_SIZE + 100
-        s = pygame.Surface((SQUARE_SIZE, SQUARE_SIZE), pygame.SRCALPHA)
-        s.fill(GREEN_HIGHLIGHT)
-        screen.blit(s, (x, y))
+    global selected_piece_pos
+    if selected_piece_pos:
+        start_row, start_col = selected_piece_pos
+        for row, col in possible_moves:
+            if is_valid_move(board, start_row, start_col, row, col):
+                display_row, display_col = get_display_position(row, col, up)
+                x = display_col * SQUARE_SIZE
+                y = display_row * SQUARE_SIZE + 100
+                s = pygame.Surface((SQUARE_SIZE, SQUARE_SIZE), pygame.SRCALPHA)
+                s.fill(GREEN_HIGHLIGHT)
+                screen.blit(s, (x, y))
 
 
 def draw_selected_piece(selected_piece_pos, up):
@@ -1063,7 +1075,7 @@ def chess_game():
         w_time = int(pvp_starting_time[pvp_selected_option_1]) * 60
         b_time = int(pvp_starting_time[pvp_selected_option_1]) * 60
     else:
-        w_time = 10 ** 100
+        w_time = 10 ** 100  # 10^100 seconds is close enough to infinity
         b_time = 10 ** 100
     running = True
     while running:
